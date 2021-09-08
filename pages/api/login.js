@@ -1,7 +1,6 @@
 
 export default async (req, res) => {
     const response = await fetch('https://cloudbilling.googleapis.com/v1/services?key=AIzaSyDVWa131rNBwaTJ29-Of1YfKBHAHwyiW18')// "serviceId":"6F81-5844-456A","displayName":"Compute Engine"
-    //const response = await fetch('https://cloudbilling.googleapis.com/v1/services/6F81-5844-456A/skus?key=AIzaSyDVWa131rNBwaTJ29-Of1YfKBHAHwyiW18')
     const data = await response.json()
 
     res.statusCode = 200
