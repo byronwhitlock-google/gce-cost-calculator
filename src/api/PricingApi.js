@@ -45,7 +45,7 @@ function getSkus(progress, url = urlFormated, skus = []) {
                 if (data.nextPageToken !== '') {
                     progress && progress(skus);
                     let tokenUrl = urlFormated+`&pageToken=${data.nextPageToken}` 
-                    console.log("dasdasdas ::", tokenUrl)
+                    console.log("token url ::", tokenUrl)
                     getSkus(progress, tokenUrl, skus).then(resolve).catch(reject)
                 } else {
                     resolve(skus);
