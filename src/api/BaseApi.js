@@ -4,7 +4,7 @@ class BaseApi {
       
     }
     
-    async fetch (url) {    
+    async get (url) {    
       console.log("in BaseApi.get()")
   
       const options = {

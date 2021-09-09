@@ -1,4 +1,5 @@
 
+import { array } from "prop-types"
 import BaseApi from "./BaseApi.js"
 
 class PricingApi extends BaseApi {
@@ -10,9 +11,11 @@ class PricingApi extends BaseApi {
     // SKU for Compute engine is 6F81-5844-456A
     // https://cloud.google.com/skus/?currency=USD&hl=en
     computeEngineSku = '6F81-5844-456A'
-
-
-    async GetInstancePricing()
+    
+    /**
+     * @param filter {{region:string, type:string} filter}
+     */
+    async GetInstancePricing(filter)
     {
         if (!this.apiKey) {
             throw new Error("Missing API Key")
@@ -21,11 +24,28 @@ class PricingApi extends BaseApi {
             throw new Error("Missing Compute Engine Sku")
         }
 
-        let url = `https://cloudbilling.googleapis.com/v1/services/${this.computeEngineSku}/skus/?key=${this.apiKey}`
-        let pricing = await this.fetch(url)
+        // TODO: fetch multiple pages
 
+        // TODO: apply filter 
+        let url = `https://cloudbilling.googleapis.com/v1/services/${this.computeEngineSku}/skus/?key=${this.apiKey}`
+        let pricing = await this.get(url)
         console.log(pricing)
-        return pricing.skus
+        let allSkus = pricing.skus
+        var timeout = 0
+
+        while(pricing.nextPageToken || ++timeout > 5)
+        {             
+            pricing = await this.get(`${url}&pageToken=${pricing.nextPageToken}`)
+            console.log(pricing)
+            for (var sku in pricing.skus) {
+                allSkus.push(sku)
+            }
+        }
+
+        // todo add filtering (iterate pricing)
+
+        console.log(`Returned ${allSkus.length} skus`)
+        return allSkus
     }
 }
 

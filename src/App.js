@@ -1,6 +1,7 @@
 import './App.css';
 import PricingApi from './api/PricingApi.js'
-import ModalPopup from './ModalPopup.js'
+import InstanceList from './components/InstanceList.js'
+import ModalPopup from './components/ModalPopup.js'
 import '@fontsource/roboto';
 import React from 'react';
 
@@ -49,15 +50,15 @@ class App extends React.Component {
   }
 
   async getPricing() { 
-    try 
-    {
+    //try kjm
+   // {
       let pricingApi = new PricingApi();
       let instancePricingJson = await pricingApi.GetInstancePricing()
       this.setState({instancePricing: instancePricingJson})
-    } catch( ex) {
+  //  } catch( ex) {
 
-      this.setError(ex.message)
-    }
+     // this.setError(ex.message, JSON.stringify( ex) )
+  //  }
     
   }
 
@@ -77,14 +78,12 @@ class App extends React.Component {
           onClose={this.handleErrorClose} />     
 
         Pricing Api 
-        <table>
-          <thead><tr><th>Name </th><th>Description</th></tr></thead>
-          <tbody>
-            {this.state.instancePricing && this.state.instancePricing.map((sku, key) =>
-              <tr><td>{sku.name}</td><td>{sku.description}</td></tr>          
-            ) }
-          </tbody>
-        </table>
+          <InstanceList
+            key="Instances"
+            setAlert={this.setAlert}
+            setError={this.setAlert}
+            instancePricing = {this.state.instancePricing}          
+          />
         
       </div>
     );
