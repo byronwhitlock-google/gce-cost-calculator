@@ -37,6 +37,7 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 export default function ModalPopup(props) {
+  
   const classes = useStyles();
   var content = {__html: props.content}
   return (
@@ -44,6 +45,7 @@ export default function ModalPopup(props) {
         aria-labelledby="transition-modal-title"
         aria-describedby="transition-modal-description"
         className={classes.modal}
+        
         {...props}
         closeAfterTransition
         BackdropComponent={Backdrop}

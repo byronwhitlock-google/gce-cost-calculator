@@ -1,5 +1,7 @@
 import '@fontsource/roboto';
 import React from 'react';
+//import Calculator from 'lib/Calculator.js' 
+
 
 class InstanceList extends React.Component {
 
@@ -10,7 +12,7 @@ class InstanceList extends React.Component {
             <tbody>
             {this.props.instancePricing && this.props.instancePricing.map((sku, key) =>
                 <tr key={sku.skuId}>
-                    <td>{sku.skuId}</td><td>{sku.name}</td><td>{sku.description}</td>
+                    <td>{sku.skuId}</td><td>{sku.name}</td><td>{sku.category.resourceGroup}</td><td>{sku.description}</td>
                 </tr>          
             ) }
             </tbody>
