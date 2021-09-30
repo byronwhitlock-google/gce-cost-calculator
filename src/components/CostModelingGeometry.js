@@ -23,7 +23,7 @@ class CostModelingGeometry extends React.Component {
 
 
     state = { 
-            isOpen:false,
+            isOpen:0,
             current: '',
             utilization: 0,
             utilization_desired: 0,
@@ -36,7 +36,7 @@ class CostModelingGeometry extends React.Component {
         // load model data from localStorage
         let model = new GeometryModel(this.props.title, this.props.type)
         await model.calculateRecommendation()
-console.log(model)
+
         //set default state from localStorage
         this.setState({
             isOpen: model.isOpen,

@@ -12,6 +12,7 @@ class App extends React.Component {
 
   state= {
     instancePricing: null,
+    filter: {},
     error : {
       title:null,
       content:null,
@@ -29,6 +30,7 @@ class App extends React.Component {
     this.setError = this.setError.bind(this)
     this.setAlert = this.setAlert.bind(this)
     this.handleErrorClose = this.handleErrorClose.bind(this)
+    this.handleRefreshFilter = this.handleRefreshFilter.bind(this)
   }  
   
   setError(text,title="Error")
@@ -60,22 +62,26 @@ class App extends React.Component {
     this.setState({...this.state,alert,error})
   }
 
+  handleRefreshFilter() {
+
+  }
+
+
 
   async componentDidMount() {
     await this.getPricing()
   }
 
   async getPricing() { 
-    //try kjm
-   // {
+    try 
+    {
       let pricingApi = new PricingApi();
       let instancePricingJson = await pricingApi.GetInstancePricing()
       this.setState({instancePricing: instancePricingJson})
-  //  } catch( ex) {
-
-     // this.setError(ex.message, JSON.stringify( ex) )
-  //  }
-    
+     } catch( ex) {
+       this.setError(`Could not Load pricing from Google. ${ex.message }`)
+      //  /throw new Error(ex)
+     }   
   }
 
   //TODO: move this crap into its own layout with the tabs
@@ -109,7 +115,8 @@ class App extends React.Component {
   <MainLayout      
     setAlert={this.setAlert}
     setError={this.setError}
-    instancePricing = {this.state.instancePricing}       
+    instancePricing = {this.state.instancePricing}     
+    filter = {this.state.filter}  
     />
         
       </div>

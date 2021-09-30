@@ -15,9 +15,51 @@
 */
 
 class Calculator {
-  constructor(){
+  constructor( PriceList){  
+    this.priceList_ = PriceList;
   }
+
+  /**
+   * SKU pricing data.
+   * @export {!Object}
+   */
+  cloudSkuData = {};
   
+  /**
+   * Sustained use tier data.
+   * @export {!Object.<string, number>}
+   */
+  sustainedUseTiers = {};
+  
+  /**
+   * Sustained use base percentage.
+   * @export {number}
+   */
+  sustainedUseBase = 0.0;
+  
+  /**
+   * Prices updated date.
+   * @export {string}
+   */
+  updated = '';
+
+
+  setPriceList_(priceList) {
+  this.cloudSkuData = priceList['sku'];
+  this.updated = priceList['updated'];
+
+  if (priceList['sku'] !== undefined) {
+    this.sustainedUseTiers = priceList['sku']['sustained_use_tiers_new'];
+    this.sustainedUseBase = priceList['sku']['sustained_use_base'];
+  }
+
+  // Iterate through the SKU data and pull out tiered prices
+  goog.object.forEach(this.cloudSkuData, function(val, key) {
+    if (val.tiers !== undefined) {
+      this.tieredPricing[key] = val.tiers;
+    }
+  }, this);
+};
  
 }
 export default Calculator

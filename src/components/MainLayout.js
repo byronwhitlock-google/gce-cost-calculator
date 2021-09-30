@@ -92,9 +92,12 @@ export default function MainLayout(props) {
         <TabPanel value={value} index={1}>
         Pricing Api 
             <InstanceList
+              {...props}     
               setAlert={props.setAlert}
               setError={props.setError}
-              instancePricing = {props.instancePricing}         
+              instancePricing={props.instancePricing}
+              
+              
             />
         </TabPanel>
       </Box>

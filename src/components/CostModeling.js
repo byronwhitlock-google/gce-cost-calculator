@@ -33,7 +33,9 @@ import Tooltip from '@material-ui/core/Tooltip';
 import { Checkbox } from '@material-ui/core';
 import FormControlLabel from '@material-ui/core/FormControlLabel';
 import GeometryModel from '../lib/GeometryModel.js';
-
+import Select from '@material-ui/core/Select'
+import MenuItem from '@material-ui/core/MenuItem'
+import RegionList from '../lib/RegionList.js'
 
 const Item = styled(Paper)(({ theme }) => ({
   ...theme.typography.body2,
@@ -46,7 +48,48 @@ class CostModeling extends React.Component {
 
     constructor(props, context) {
         super(props,context);
+        this.handleChangeRegion= this.handleChangeRegion.bind(this)
+        this.regionList= new RegionList()
     }  
+
+    state = {filter: {region:'us-west2'}}
+
+    regions =[]
+
+    async handleChangeGeometry() {
+    }
+
+    async handleChangeRegion(evt) {
+        await this.setState({filter: {region: evt.target.value}})
+        this.applyFilter()
+    }    
+    
+    async componentDidMount() { 
+        this.applyFilter()
+        this.regions = this.regionList.regions() 
+    }
+
+    applyFilter() {
+        let instancePricing = []
+        var filter_region = this.state.filter.region
+
+
+        // apply filter
+        if (this.props.instancePricing) {
+            for(let i =0;i<this.props.instancePricing.length;i++) {
+                var product = this.props.instancePricing[i]
+                if (this.state.filter.region) {
+                    if (! product["serviceRegions"].includes(filter_region)) {
+                        continue
+                    }
+                }
+                instancePricing.push(product)
+            }
+        }
+
+        this.setState({...this.state, instancePricing: instancePricing})
+    }
+
 
     render () {
         let props = this.props
@@ -55,15 +98,34 @@ class CostModeling extends React.Component {
             <Grid container spacing={2}>
             <Grid item xs={12} md={4}>
                 <Item>
+                    <h2>Select Region: </h2>
+                    <Item>
+                            <Select
+                                value={this.state.filter.region}
+                                onChange={this.handleChangeRegion}
+                                inputProps={{
+                                name: 'Region',
+                                id: 'region',
+                                }}
+                            >
+                                <MenuItem value="">
+                                    <em>All</em>
+                                </MenuItem>
+                                {this.regions.map((region, key) =>
+                                <MenuItem value={region.id}>{region.id} ({region.name})</MenuItem>       
+                                ) }
+                            </Select>                    
+                    </Item>
+
                     <Tooltip title="Instance Geometry parameters determined by current count, utilization and desired utilization of the resource.">
-                        <h2>Optimize Resource Geometry </h2>
+                        <h2>Optimize Machine Geometry </h2>
                     </Tooltip>
                     
                     
-                    <CostModelingGeometry title="vCpu" type ="Cores" />       
-                    <CostModelingGeometry title="Memory" type ="Gigabytes" />       
-                    <CostModelingGeometry title="PD-Boot" type ="Disk GB" />       
-                    <CostModelingGeometry title="SSD-PD" type ="Disk GB" />       
+                    <CostModelingGeometry title="vCpu" type ="Cores"  onChange={this.handleChangeGeometry}/>       
+                    <CostModelingGeometry title="Memory" type ="Gigabytes" onChange={this.handleChangeGeometry}/>       
+                    <CostModelingGeometry title="PD-Boot" type ="Disk GB" onChange={this.handleChangeGeometry}/>       
+                    <CostModelingGeometry title="SSD-PD" type ="Disk GB" onChange={this.handleChangeGeometry}/>       
                 
                 </Item>
                 <Item>
@@ -97,7 +159,12 @@ class CostModeling extends React.Component {
             </Grid>
             <Grid item xs={12} md={8}>
                 <Item>
+
                 <h2>Matching Machine Types</h2>
+                <InstanceList {...props}
+                    filter={this.state.filter}
+                    instancePricing={this.state.instancePricing}                    
+                />
                 </Item>
             </Grid>      
             </Grid>
