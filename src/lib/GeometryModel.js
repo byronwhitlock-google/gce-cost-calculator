@@ -43,6 +43,9 @@ class GeometryModel
         this.utilization_desired = utilization_desired ? utilization_desired : this.utilization_desired
 
         this.isOpen = localStorage.getItem(`${this.id}-isOpen`)
+
+        if (this.isOpen == 'false') // local storage is always a string
+          this.isOpen = false
       }
     }
 

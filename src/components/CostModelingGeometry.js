@@ -71,7 +71,7 @@ class CostModelingGeometry extends React.Component {
         await model.calculateRecommendation()
         if (model.recommended) {
             // update recommended calculation
-            this.setState({recommended: model.recommended})
+            this.setState({...this.state,recommended: model.recommended})
         }
 
         await model.persist()
@@ -80,14 +80,14 @@ class CostModelingGeometry extends React.Component {
     }
 
     async toggleOpen() {        
-        await this.setState({isOpen: !this.state.isOpen})
+        await this.setState({...this.state, isOpen: !this.state.isOpen})
         this.saveState()
     }
     
     async handleUpdateCurrent(evt) {
         let current = evt.target.value.replace( /[^0-9]/g, '' ); 
         if (current) {
-            await this.setState({current: current})
+            await this.setState({...this.state,current: current})
             this.saveState()
         }
     }
@@ -96,7 +96,7 @@ class CostModelingGeometry extends React.Component {
         if (utilization > 100) {
             this.props.setError("Utilization cannot exceed 100%")
         } else if (utilization) {
-            await this.setState({utilization: utilization})
+            await this.setState({...this.state,utilization: utilization})
             this.saveState()
         }
     }
@@ -105,7 +105,7 @@ class CostModelingGeometry extends React.Component {
         if (utilization_desired > 100) {
             this.props.setError("Desired Utilization cannot be exceed  100%")
         } else if (utilization_desired) {
-            await this.setState({utilization_desired: utilization_desired})
+            await this.setState({...this.state,utilization_desired: utilization_desired})
             this.saveState()     
         }
     }
