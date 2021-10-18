@@ -71,6 +71,9 @@ class CostModelingGeometry extends React.Component {
         await model.calculateRecommendation()
         if (model.recommended) {
             // update recommended calculation
+            if(model.recommended > 20){
+                console.log("n1standard")
+            }
             this.setState({...this.state,recommended: model.recommended})
         }
 
@@ -113,8 +116,6 @@ class CostModelingGeometry extends React.Component {
     render () {
         let title = this.props.title
         let type = this.props.type
-        console.log("rendering")
-console.log(this.state)
         return (
                 <Accordion expanded={this.state.isOpen} onChange={this.toggleOpen}>
                     <AccordionSummary

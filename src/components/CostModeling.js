@@ -36,6 +36,7 @@ import GeometryModel from '../lib/GeometryModel.js';
 import Select from '@material-ui/core/Select'
 import MenuItem from '@material-ui/core/MenuItem'
 import RegionList from '../lib/RegionList.js'
+import MachineList from '../lib/MachineList.js'
 
 const Item = styled(Paper)(({ theme }) => ({
   ...theme.typography.body2,
@@ -48,13 +49,16 @@ class CostModeling extends React.Component {
 
     constructor(props, context) {
         super(props,context);
-        this.handleChangeRegion= this.handleChangeRegion.bind(this)
+        this.handleChangeRegion= this.handleChangeRegion.bind(this) 
         this.regionList= new RegionList()
+        this.machineList = new MachineList();
+        
     }  
 
     state = {filter: {region:'us-west2'}}
 
     regions =[]
+    machines = []
 
     async handleChangeGeometry() {
     }
@@ -67,6 +71,8 @@ class CostModeling extends React.Component {
     async componentDidMount() { 
         this.applyFilter()
         this.regions = this.regionList.regions() 
+        this.machines = this.machineList.machines();
+        
     }
 
     applyFilter() {

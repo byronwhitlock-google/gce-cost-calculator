@@ -22,6 +22,7 @@ class GeometryModel
     utilization_desired=100
     recommended=0
     isOpen=false
+    recommendedMachines = []
     
     // id is not set incase we try to persist 
     constructor(title,type) {     
@@ -54,8 +55,19 @@ class GeometryModel
         if (this.utilization_desired) // prevent divide by zero
         {
           // now calculate recommended.
-          
-              return this.recommended =  Math.ceil(this.current*this.utilization/this.utilization_desired)
+              var machines = JSON.parse(localStorage.getItem("machines"));
+              console.log("machines", machines[0].vcpus)
+
+              this.recommended =  Math.ceil(this.current*this.utilization/this.utilization_desired)
+              
+              for (var vcpu of machines){
+                if (vcpu.vcpus <= this.recommended) {
+                  this.recommendedMachines.push(vcpu)
+                }
+              }
+              
+              console.log(recommendedMachines)
+              return this.recommended
             
         }        
     }

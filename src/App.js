@@ -77,6 +77,7 @@ class App extends React.Component {
     {
       let pricingApi = new PricingApi();
       let instancePricingJson = await pricingApi.GetInstancePricing()
+      console.log("instacenJson", instancePricingJson);
       this.setState({instancePricing: instancePricingJson})
      } catch( ex) {
        this.setError(`Could not Load pricing from Google. ${ex.message }`)

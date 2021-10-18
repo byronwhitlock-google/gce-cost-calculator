@@ -119,6 +119,7 @@ class PricingApi extends BaseApi {
             }
         }
         console.log(`Returned ${filteredSkus.length} skus`)
+        console.log(filteredSkus['category'])
         return filteredSkus
         
     }
