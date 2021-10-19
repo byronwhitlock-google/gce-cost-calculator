@@ -59,14 +59,15 @@ class GeometryModel
               console.log("machines", machines[0].vcpus)
 
               this.recommended =  Math.ceil(this.current*this.utilization/this.utilization_desired)
-              
+
               for (var vcpu of machines){
+                console.log("vcpu number, ", vcpu.vcpus)
                 if (vcpu.vcpus <= this.recommended) {
                   this.recommendedMachines.push(vcpu)
                 }
               }
               
-              console.log(recommendedMachines)
+              console.log(this.recommendedMachines)
               return this.recommended
             
         }        

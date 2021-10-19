@@ -71,9 +71,6 @@ class CostModelingGeometry extends React.Component {
         await model.calculateRecommendation()
         if (model.recommended) {
             // update recommended calculation
-            if(model.recommended > 20){
-                console.log("n1standard")
-            }
             this.setState({...this.state,recommended: model.recommended})
         }
 

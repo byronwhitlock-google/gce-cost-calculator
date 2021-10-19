@@ -19,16 +19,16 @@ class MachineList {
         return machines;
     }
 
-    sortByProperty(property){  
-        return function(a,b){  
-           if(a[property] > b[property])  
-              return 1;  
-           else if(a[property] < b[property])  
-              return -1;  
-       
-           return 0;  
-        }  
-     }
+    sortByProperty(property) {
+        return function (a, b) {
+            if (a[property] > b[property])
+                return 1;
+            else if (a[property] < b[property])
+                return -1;
+
+            return 0;
+        }
+    }
 
     _raw = [
         // type, vcpus, memory
@@ -47,8 +47,8 @@ class MachineList {
         ['e2-highmem-4', 4, 32],
         ['e2-highmem-8', 8, 64],
         ['e2-medium', 2, 4],
-        ['e2-micro	', 2, 1],
-        ['e2-small	', 2, 2],
+        ['e2-micro', 2, 1],
+        ['e2-small', 2, 2],
         ['e2-standard-16', 16, 64],
         ['e2-standard-2', 2, 8],
         ['e2-standard-32', 32, 128],
