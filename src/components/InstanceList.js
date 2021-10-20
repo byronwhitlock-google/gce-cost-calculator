@@ -13,19 +13,7 @@ class InstanceList extends React.Component {
         var unit = sku['pricingInfo'][0]['pricingExpression']['usageUnitDescription']
         return <div>${price} per {unit}</div>
     }
-
-    filterByRegion = (instance) => {
-        let byRegion = []
-        for (let i = 0; i < instance.length; i++) {
-            let region = instance[i];
-            if (region.category.resourceGroup == "N1Standard") {
-                byRegion.push(region)
-            }
-        }
-        console.log("byregion", byRegion)
-        return byRegion
-    }
-
+    
     render() {
         return (
             <table key="mytables">

@@ -23,6 +23,7 @@ class GeometryModel
     recommended=0
     isOpen=false
     recommendedMachines = []
+    recommendedM = []
     
     // id is not set incase we try to persist 
     constructor(title,type) {     
@@ -58,10 +59,23 @@ class GeometryModel
               var machines = JSON.parse(localStorage.getItem("machines"));
               console.log("machines", machines[0].vcpus)
 
+              var predefined = JSON.parse(localStorage.getItem("predefined"));
+
+             console.log("length", predefined.length)
+
               this.recommended =  Math.ceil(this.current*this.utilization/this.utilization_desired)
 
+              for(var machine of predefined){
+                //console.log(machine)
+                if (machine.price["cores"] && machine.price["cores"] <= this.recommended){
+                  //console.log("prices")
+                  //console.log(machine.price["cores"])
+                  this.recommendedM.push(machine);
+                }
+              }
+
+              console.log('recommended', this.recommendedM);
               for (var vcpu of machines){
-                console.log("vcpu number, ", vcpu.vcpus)
                 if (vcpu.vcpus <= this.recommended) {
                   this.recommendedMachines.push(vcpu)
                 }
