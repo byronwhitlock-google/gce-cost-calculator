@@ -23,15 +23,15 @@ import Grid from '@material-ui/core/Grid';
 import Paper from '@material-ui/core/Paper';
 import { styled } from '@material-ui/core/styles';
 import Divider from '@material-ui/core/Divider';
-
 import InstanceList from './InstanceList.js' 
 import CostModeling from './CostModeling.js';
 import Tooltip from '@material-ui/core/Tooltip';
+import PriceList from './PriceList.js'
 
 const Item = styled(Paper)(({ theme }) => ({
   ...theme.typography.body2,
   padding: theme.spacing(1),
-  textAlign: 'center',
+  textAlign: 'left',
   color: theme.palette.text.secondary,
 }));
 
@@ -82,7 +82,10 @@ export default function MainLayout(props) {
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
           <Tabs value={value} onChange={handleChange} aria-label="basic tabs example">
             <Tab label="Migration Calculator" {...setTab(0)} />
-            <Tab label="Raw Pricing" {...setTab(1)} />
+            <Tab label="[DEBUG] API Pricelist" {...setTab(1)} />
+            
+            <Tab label="[DEBUG] Calculator Pricelist" {...setTab(2)} />
+            
           </Tabs>
         </Box>
         <TabPanel value={value} index={0}>
@@ -90,14 +93,22 @@ export default function MainLayout(props) {
           />
         </TabPanel>
         <TabPanel value={value} index={1}>
-        Pricing Api 
+        Pricing Api (https://cloud.google.com/billing/v1/how-tos/catalog-api )
             <InstanceList
               {...props}     
               setAlert={props.setAlert}
               setError={props.setError}
-              instancePricing={props.instancePricing}
+              instancePriceList={props.instancePriceList}
               
               
+            />
+        </TabPanel>
+         <TabPanel value={value} index={2}>
+        PriceList Calculator (https://cloudpricingcalculator.appspot.com/static/data/pricelist.json) 
+            <PriceList
+              {...props}     
+              setAlert={props.setAlert}
+              setError={props.setError}
             />
         </TabPanel>
       </Box>

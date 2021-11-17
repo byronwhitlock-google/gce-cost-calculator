@@ -17,49 +17,83 @@
 class Calculator {
   constructor( PriceList){  
     this.priceList_ = PriceList;
+    
   }
 
-  /**
-   * SKU pricing data.
-   * @export {!Object}
-   */
-  cloudSkuData = {};
-  
-  /**
-   * Sustained use tier data.
-   * @export {!Object.<string, number>}
-   */
-  sustainedUseTiers = {};
-  
-  /**
-   * Sustained use base percentage.
-   * @export {number}
-   */
-  sustainedUseBase = 0.0;
-  
-  /**
-   * Prices updated date.
-   * @export {string}
-   */
-  updated = '';
+  // TODO: move machine pricing  into another libarary  
+  /// machineTypeName: n2-highcpu-2
+  getSkus(machineTypeName) {
 
-
-  setPriceList_(priceList) {
-  this.cloudSkuData = priceList['sku'];
-  this.updated = priceList['updated'];
-
-  if (priceList['sku'] !== undefined) {
-    this.sustainedUseTiers = priceList['sku']['sustained_use_tiers_new'];
-    this.sustainedUseBase = priceList['sku']['sustained_use_base'];
-  }
-
-  // Iterate through the SKU data and pull out tiered prices
-  goog.object.forEach(this.cloudSkuData, function(val, key) {
-    if (val.tiers !== undefined) {
-      this.tieredPricing[key] = val.tiers;
+    var family = machineTypeName.split('-').at(0).toLowerCase()
+    var custom=false
+    if (machineTypeName.toLowerCase().includes("custom")) {
+      custom=true
     }
-  }, this);
-};
+
+    var matchStandardRam = new RegExp(`^${family} Instance Ram`,'i')
+    var matchStandardCpu = new RegExp(`^${family} Instance Core`,'i')
+
+    var matchCustomRam = new RegExp(`^${family} Custom Instance Ram`,'i')
+    var matchCustomCpu = new RegExp(`^${family} Custom Instance Core`,'i')
+    if (family == 'e2') {
+      matchCustomRam = matchStandardRam
+      matchCustomCpu = matchStandardCpu
+    }
+
+    if (family == 'n1') {
+      matchCustomRam = matchStandardRam = new RegExp(`^${family}.+ ram`,'ig')
+      matchCustomCpu = matchStandardCpu = new RegExp(`^${family}.+ core`,'ig')
+    }
+
+     if (family == 'n2d') {
+      matchStandardRam = new RegExp(`^${family} AMD Instance Ram running`,'i')
+      matchStandardCpu = new RegExp(`^${family} AMD Instance Core running`,'i')
+      matchCustomRam = new RegExp(`^${family} AMD Custom Instance Ram running`,'i')
+      matchCustomCpu = new RegExp(`^${family} AMD Custom Instance Core running`,'i')
+     }
+
+    let skus = []
+    for(var i in this.priceList_) {
+        var sku = this.priceList_[i]
+        var desc = sku['description'].toLowerCase()
+
+
+       if (family)
+        var push =false
+        if (custom) {
+          if (desc.match(matchCustomCpu) || desc.match(matchCustomRam)) {
+            push=true
+          }
+
+        } else {
+          if (desc.match(matchStandardCpu) || desc.match(matchStandardRam)) {
+            push=true
+          }          
+        }
+        
+        if(push)
+        {
+          skus.push({
+            price: this.getPrice(sku),
+            units: this.getUnit(sku),
+            skuId: sku['skuId'],
+            resourceGroup: sku['category']['resourceGroup'],
+            description: sku['description']
+          })
+        }
+
+    }
+    return skus
+  }
+
+  getPrice(sku) {
+    if (!sku['pricingInfo']) return 0
+    return 1000000/sku['pricingInfo'][0]['pricingExpression']['tieredRates'][0]['unitPrice']['nanos']        
+  }
+  getUnit(sku) {
+    if (!sku['pricingInfo']) return 0
+    return sku['pricingInfo'][0]['pricingExpression']['usageUnitDescription']
+  }
  
 }
 export default Calculator

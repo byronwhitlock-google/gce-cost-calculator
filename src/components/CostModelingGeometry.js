@@ -36,7 +36,9 @@ class CostModelingGeometry extends React.Component {
         // load model data from localStorage
         let model = new GeometryModel(this.props.title, this.props.type)
         await model.calculateRecommendation()
-
+        
+        this.props.onChange(model)
+        
         //set default state from localStorage
         this.setState({
             isOpen: model.isOpen,
@@ -72,6 +74,8 @@ class CostModelingGeometry extends React.Component {
         if (model.recommended) {
             // update recommended calculation
             this.setState({...this.state,recommended: model.recommended})
+            
+            this.props.onChange(model)
         }
 
         await model.persist()

@@ -244,9 +244,10 @@ cloudpricingcalculator.components.cloudcalculator.CloudCalculator = function(
    */
   this.GCE_VMS_CORE_RAM_RATIO = {
     'n1': {'standard': 3.75, 'highmem': 6.5, 'highcpu': 0.9},
-    'n2': {'standard': 4, 'highmem': 8, 'highcpu': 1},
+    'n2': {'standard': 4, 'highmem': 8, 'highmem-alternate': 6.75, 'highcpu': 1},
     'e2': {'standard': 4, 'highmem': 8, 'highcpu': 1},
     'n2d': {'standard': 4, 'highmem': 8, 'highcpu': 1},
+    't2d': {'standard': 4},
     'c2': {'standard': 4, 'highcpu': 2},
     'a2': {'highgpu': 85 / 12, 'megagpu': 1360 / 96},
     'm1': {'megamem': 1433.6 / 96, 'ultramem': 961 / 40},

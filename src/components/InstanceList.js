@@ -18,13 +18,12 @@ class InstanceList extends React.Component {
             <table key="mytables">
             <thead><tr><th>Name </th><th>Description</th></tr></thead>
             <tbody>
-            {this.props.instancePricing && this.props.instancePricing.map((sku, key) =>
+            {this.props.instancePriceList && this.props.instancePriceList.map((sku, key) =>
                 <tr key={sku.skuId}>
                     <td>{sku.category.resourceGroup}</td><td>{sku.description}</td> 
                     <td>
                         {this.formatPrice(sku)}
-                        </td>
-                    
+                    </td>
                     <td>
                        {JSON.stringify(sku, null, 2)}
                     </td>

@@ -23,7 +23,7 @@ import Card from '@material-ui/core/Card'
 import CardContent from '@material-ui/core/CardContent'
 
 import Button from '@material-ui/core/Button';
-import InstanceList from './InstanceList.js' 
+import InstancePriceList from './InstancePriceList.js' 
 import Typography from '@material-ui/core/Typography';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import CostModelingGeometry from './CostModelingGeometry.js'
@@ -56,39 +56,18 @@ class CostModeling extends React.Component {
 
     regions =[]
 
-    async handleChangeGeometry() {
-    }
-
     async handleChangeRegion(evt) {
         await this.setState({filter: {region: evt.target.value}})
-        this.applyFilter()
+        this.props.applyRegionFilter(this.state.filter.region)
     }    
     
     async componentDidMount() { 
-        this.applyFilter()
+        
         this.regions = this.regionList.regions() 
+        this.props.applyRegionFilter(this.state.filter.region)
     }
 
-    applyFilter() {
-        let instancePricing = []
-        var filter_region = this.state.filter.region
-
-
-        // apply filter
-        if (this.props.instancePricing) {
-            for(let i =0;i<this.props.instancePricing.length;i++) {
-                var product = this.props.instancePricing[i]
-                if (this.state.filter.region) {
-                    if (! product["serviceRegions"].includes(filter_region)) {
-                        continue
-                    }
-                }
-                instancePricing.push(product)
-            }
-        }
-
-        this.setState({...this.state, instancePricing: instancePricing})
-    }
+    
 
 
     render () {
@@ -122,10 +101,10 @@ class CostModeling extends React.Component {
                     </Tooltip>
                     
                     
-                    <CostModelingGeometry title="vCpu" type ="Cores"  onChange={this.handleChangeGeometry}/>       
-                    <CostModelingGeometry title="Memory" type ="Gigabytes" onChange={this.handleChangeGeometry}/>       
-                    <CostModelingGeometry title="PD-Boot" type ="Disk GB" onChange={this.handleChangeGeometry}/>       
-                    <CostModelingGeometry title="SSD-PD" type ="Disk GB" onChange={this.handleChangeGeometry}/>       
+                    <CostModelingGeometry title="vCpu" type ="Cores"  onChange={this.props.onInputChanged}/>       
+                    <CostModelingGeometry title="Memory" type ="Gigabytes" onChange={this.props.onInputChanged}/>       
+                    <CostModelingGeometry title="PD-Boot" type ="Disk GB" onChange={this.props.onInputChanged}/>       
+                    <CostModelingGeometry title="SSD-PD" type ="Disk GB" onChange={this.props.onInputChanged}/>       
                 
                 </Item>
                 <Item>
@@ -139,7 +118,12 @@ class CostModeling extends React.Component {
                 </Item>
                 
                 <Item>
-                <h2><FormControlLabel control={<Checkbox defaultChecked color="primary"/>} label="" />Use Commited Use Discounts ?</h2>
+                <h2><FormControlLabel control={<Checkbox defaultChecked color="primary"/>} label="" />Show Commited Use Discounts ?</h2>
+                                    <GenericGeometry 
+                        title="Sustained Use Discount" 
+                        value="6"
+                        type="Months"
+                    />
                     <GenericGeometry 
                         title="On-Demand Period" 
                         value="6"
@@ -161,9 +145,9 @@ class CostModeling extends React.Component {
                 <Item>
 
                 <h2>Matching Machine Types</h2>
-                <InstanceList {...props}
+                <InstancePriceList {...props}
                     filter={this.state.filter}
-                    instancePricing={this.state.instancePricing}                    
+                    instancePriceList={this.state.instancePriceListFiltered}                    
                 />
                 </Item>
             </Grid>      

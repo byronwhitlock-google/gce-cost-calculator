@@ -15,7 +15,7 @@ class PricingApi extends BaseApi {
     /**
      * @param filter {{region:string, type:string} filter}
      */
-    async GetInstancePricing(filter)
+    async GetInstancePriceList(filter)
     {
         if (!this.apiKey) {
             throw new Error("Missing API Key")
@@ -93,7 +93,7 @@ class PricingApi extends BaseApi {
         let filteredSkus = []
         for (let i=0;i<allSkus.length;i++) { // for loop in java script is almost fastest way to iterate
             let sku = allSkus[i]
-            let push = false
+            let push = true
             // always filter on 
             //"category.resourceFamily": "Compute",
             //"category.usageType": "OnDemand"
