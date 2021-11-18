@@ -235,16 +235,17 @@ cloudpricingcalculator.components.cloudcalculator.CloudCalculator = function(
   this.TOTAL_BILLING_HOURS = 730;
 
   /**
-   * @const {number}
+   * @const {!Object}
    */
-  this.MAX_RAM_RATIO = {'n1': 6.5, 'n2': 8, 'n2d': 8};
+  this.MAX_RAM_RATIO = {'n1': 6.5, 'n2': 8, 'n2d': 8, 't2d': 4};
 
   /**
-   * @const {Object}
+   * @const {!Object}
    */
   this.GCE_VMS_CORE_RAM_RATIO = {
     'n1': {'standard': 3.75, 'highmem': 6.5, 'highcpu': 0.9},
-    'n2': {'standard': 4, 'highmem': 8, 'highmem-alternate': 6.75, 'highcpu': 1},
+    'n2':
+      {'standard': 4, 'highmem': 8, 'highmem-alternate': 6.75, 'highcpu': 1},
     'e2': {'standard': 4, 'highmem': 8, 'highcpu': 1},
     'n2d': {'standard': 4, 'highmem': 8, 'highcpu': 1},
     't2d': {'standard': 4},
@@ -276,15 +277,13 @@ cloudpricingcalculator.components.cloudcalculator.CloudCalculator = function(
 
   // retrieve Cartdata only once
   this.isRetrieved = false;
-  /* 
-  TODO: We need to inject pricelist data since we aren't using angular
-*/
-
   // Get the pricelist data and then get saved data.
   var listener = goog.bind(function(event) {
     // splitted id from main window hash
-    var parsedId = this.cartData_.parseUrlHash(event.data);
-    this.calculationId = parsedId;
+    const parsedId = this.cartData_.parseUrlHash(event.data);
+    if (parsedId) {
+      this.calculationId = parsedId;
+    }
     // Get data from Datastore on initializing
     this.retrieveCartdata();
   }, this);
@@ -298,7 +297,6 @@ cloudpricingcalculator.components.cloudcalculator.CloudCalculator = function(
   this.priceList_.getAll()
       .then(goog.bind(this.setPriceList_, this))
       .then(goog.bind(this.retrieveCartdata, this));
-  
 };
 
 
@@ -573,10 +571,12 @@ CloudCalculator.prototype.getMaxCoreRatio = function(family) {
 /**
  * Parses SKU for core and ram values.
  * @param {string} sku The product SKU
- * @return {!Object.<string, number>} Object containing core and ram information.
+ * @return {!Object.<string, number>} Object containing core and ram
+ *     information.
  */
 CloudCalculator.prototype.parseCustomSKU = function(sku) {
-  const parsedSku = sku.slice(sku.toUpperCase().search('CUSTOM') + 7).split('-');
+  const parsedSku =
+      sku.slice(sku.toUpperCase().search('CUSTOM') + 7).split('-');
   // GCE SKUs using MB while SQL GB
   const multiplier = sku.indexOf('CP-DB') === -1 ? this.TB_TO_GB : 1;
   const cores = parsedSku[0];
@@ -588,12 +588,12 @@ CloudCalculator.prototype.parseCustomSKU = function(sku) {
 /**
  * Parses SKU for core and ram values.
  * @param {string} sku The product SKU
- * @return {Object.<string, number>} Object containing core and ram information.
+ * @return {?Object.<string, number>} Object containing core and ram information.
  */
 CloudCalculator.prototype.parseSkuWithFamily = function(sku) {
-  const parsedSku = sku.replace('CP-COMPUTEENGINE-VMIMAGE-', '').split('-');t67
+  const parsedSku = sku.replace('CP-COMPUTEENGINE-VMIMAGE-', '').split('-');
   const family = parsedSku[0].toLowerCase();
-  const machineType = parsedSku[1].toLowerCase();
+  const parsedMachineType = parsedSku[1].toLowerCase();
   let coreNumber = parseInt(parsedSku[2]);
   if (family == 'a2') {
     coreNumber =
@@ -602,6 +602,10 @@ CloudCalculator.prototype.parseSkuWithFamily = function(sku) {
   if (!coreNumber) {
     return {'cores': 1, 'ram': 1};
   }
+  const machineType =
+    family == 'n2' && parsedMachineType == 'highmem' && coreNumber == 128 ?
+      `${parsedMachineType}-alternate` :
+      parsedMachineType ;
   let ram = this.GCE_VMS_CORE_RAM_RATIO[family][machineType] * coreNumber;
   // For SKUs who's discription is not Present in pricing.json.
   if (ram == null || isNaN(ram)) {
@@ -797,10 +801,8 @@ CloudCalculator.prototype.calculateSustainedUseDiscountPrice = function(
     priceResponse = this.getCustomVmPrice(sku, region);
   } else if (
       sku.indexOf('F1') != -1 || sku.indexOf('G1') != -1 ||
-      sku.indexOf('E2-MICRO') !== -1 ||
-      sku.indexOf('E2-SMALL') !== -1 ||
-      sku.indexOf('E2-MEDIUM') !== -1 ||
-      sku.indexOf('DB') != -1 ||
+      sku.indexOf('E2-MICRO') !== -1 || sku.indexOf('E2-SMALL') !== -1 ||
+      sku.indexOf('E2-MEDIUM') !== -1 || sku.indexOf('DB') != -1 ||
       sku.indexOf('CP-CLOUDSQLSERVER-LICENCING') != -1) {
     priceResponse = this.getUnitPrice(sku, region);
   } else {
@@ -919,12 +921,14 @@ CloudCalculator.prototype.addItemToCart = function(
         newItem.sku.indexOf('CP-COMPUTEENGINE-INTERNET-EGRESS') == -1 &&
         newItem.sku.indexOf('CP-CLOUD-TPU') == -1 &&
         newItem.sku.indexOf('CP-COMPOSER') == -1 &&
+        newItem.sku.indexOf('CP-IOT-CORE-DATA') == -1 &&
         newItem.sku.indexOf('CP-ORBITERA') == -1 &&
         newItem.sku.indexOf('CP-NETWORK-SERVICES-CLOUD-NAT') == -1 &&
         newItem.sku.indexOf('CP-NETWORK-SERVICES-CLOUD-ARMOR') == -1 &&
         newItem.sku.indexOf('CP-DEDICATED-INTERCONNECTVPN') == -1 &&
         newItem.sku.indexOf('CP-PARTNER-INTERCONNECTVPN') == -1 &&
         newItem.sku.indexOf('CP-RECOMMENDATIONS-AI') == -1 &&
+        newItem.sku.indexOf('CP-SOURCE-REPOSITORY') == -1 &&
         newItem.sku.indexOf('CP-VPN') == -1 &&
         newItem.sku.indexOf('CP-SECRET-MANAGER') == -1 &&
         newItem.sku.indexOf('CP-MEMORYSTORE-MEMCACHED') == -1 &&
@@ -936,12 +940,20 @@ CloudCalculator.prototype.addItemToCart = function(
         newItem.sku.indexOf('CP-MEMORYSTORE-REDIS') == -1 &&
         newItem.sku.indexOf('CP-SPEECH-TO-TEXT') == -1 &&
         newItem.sku.indexOf('CP-BIGSTORE') == -1 &&
+        newItem.sku.indexOf('CP-BQ-BI-ENGINE-ONDEMAND') == -1 &&
+        newItem.sku.indexOf('CP-ANTHOS') == -1 &&
+        newItem.sku.indexOf('CP-PUBSUB') == -1 &&
+        newItem.sku.indexOf('CP-COMPUTEENGINE-STORAGE-PD-READONLY') == -1 &&
+        newItem.sku.indexOf('CP-BQ-OMNI-') == -1 &&
         this.isEqualOrBothNaN(item.quantityLabel, newItem.quantityLabel) &&
         this.isEqualOrBothNaN(item.quantityLabel, newItem.quantityLabel) &&
         this.isEqualOrBothNaN(item.region, newItem.region) &&
         this.isEqualOrBothNaN(item.displayName, newItem.displayName) &&
         this.isEqualOrBothNaN(
-            item.displayDescription, newItem.displayDescription)) {
+            item.displayDescription, newItem.displayDescription) &&
+        this.isEqualOrBothNaN(
+            item.items.editHook.initialInputs.readonly,
+            newItem.items.editHook.initialInputs.readonly)) {
       if (newItem.sku === item.sku && newItem.region === item.region) {
         if ((item.sku.indexOf('FORWARDING_RULE_CHARGE_BASE') > -1) &&
             (item.quantity + newItem.quantity > 5)) {
@@ -1020,8 +1032,7 @@ CloudCalculator.prototype.addItemToCart = function(
     // For old estimates before addSud check box we shghould set it as true
     const addCudCheckbox = newItem.items.editHook.initialInputs.addSud;
     const sku = newItem.sku;
-    let addSud =
-        typeof addCudCheckbox === 'undefined' ? true : addCudCheckbox;
+    let addSud = typeof addCudCheckbox === 'undefined' ? true : addCudCheckbox;
     const isResourceBased = !sku.match(/e2-micro|e2-small|e2-medium|F1|G1/i);
     const isSudEligible = !sku.match(/A2|E2/i);
     addSud = addSud && isSudEligible;
@@ -1064,8 +1075,6 @@ CloudCalculator.prototype.addItemToCart = function(
     let reGceCost = quantity * perHostPrice;
     const totalHoursPerMonth = quantity * hoursPerMonth;
 
-    newItem.items.gceCost = reGceCost;
-
     const ssd = newItem.items.editHook.initialInputs.ssd;
     let ssdCost = 0;
     let ssdPrice = 0;
@@ -1099,6 +1108,7 @@ CloudCalculator.prototype.addItemToCart = function(
       reGceCost += extendedMemoryCost;
     }
 
+    newItem.items.gceCost = reGceCost;
     newItem.items.extendedMemoryCost = extendedMemoryCost;
     const nvidiaGridCost = newItem.items.nvidiaGridCost || 0;
     const publicIpPrice = newItem.items.publicIpPrice || 0;
@@ -1171,7 +1181,7 @@ CloudCalculator.prototype.addItemToCart = function(
   }
   if (newItem.sku.indexOf('CP-COMPUTEENGINE-VMIMAGE') != -1 && recalc &&
       newItem.items.editHook.product === 'containerEngine') {
-    let hoursPerMonth = newItem.items.hoursPerMonth;
+    let hoursPerMonth = newItem.items.hoursPerMonth || this.TOTAL_BILLING_HOURS;
     const quantity = newItem.items.editHook.initialInputs.quantity;
     let cores = 0;
     const ram = newItem.items.editHook.initialInputs.custom.ram;
@@ -1296,6 +1306,10 @@ CloudCalculator.prototype.addItemToCart = function(
         gceCost += extendedMemoryCost;
       }
     }
+
+    newItem.items.gceCost = gceCost;
+    newItem.items.gpuCost = gpuCost;
+
     // Calculate the total price
     const totalPrice =
         gceCost + ssdCost + containerCost + gpuCost + nvidiaGridCost + osCost;
@@ -1410,6 +1424,8 @@ CloudCalculator.prototype.addItemToCart = function(
       case 'days':
         hours = newItem.items.editHook.initialInputs.daysMonthly * 24;
         break;
+      default:
+        hours = this.TOTAL_BILLING_HOURS;
     }
 
     /** @type {number} */
@@ -1489,7 +1505,7 @@ CloudCalculator.prototype.addItemToCart = function(
     const memoryCount = newItem.items.ramHours;
     /** @type {number} */
     const storage = newItem.items.storageHours;
-    const dataProcessed = newItem.items.dataProcessed;
+    const dataProcessed = newItem.items.dataProcessed || 0;
     // Check for 'region' to be backward compatibile with older saved estimates.
     /** @type {string} */
     let region = newItem.items.editHook.initialInputs.location ||
@@ -1519,7 +1535,7 @@ CloudCalculator.prototype.addItemToCart = function(
     totalPrice += this.calculateItemPrice(memorySku, memoryCount, region);
     // Data processing cost
     const dataProcessedCost = this.calculateItemPrice(
-      `${basicSku}-DATA-PROCESSED`, dataProcessed, region);
+        `${basicSku}-DATA-PROCESSED`, dataProcessed, region);
     totalPrice += dataProcessedCost;
     // After that add storage cost.
     /** @type {string} */
@@ -1534,7 +1550,74 @@ CloudCalculator.prototype.addItemToCart = function(
   }
 
   if (newItem.sku.indexOf('CP-CLOUD-RUN') != -1 && recalc) {
-    newItem.price = newItem.oldPrice;
+    const isCud = newItem.items.isCud;
+    const cudDiscount = 0.83;
+    const cpuAllocationType = newItem.items.cpuAllocationType || 'THROTTLED';
+    const tierType = newItem.items.tierType;
+    let minimumInstanceCpuSku = '';
+    let minimumInstanceMemorySku = '';
+    let cpuSku = '';
+    let memorySku = '';
+
+    cpuSku = 'CP-CLOUD-RUN-CPU-ALLOCATION-TIME-' + tierType.toUpperCase() +
+        '-' + cpuAllocationType;
+    memorySku = 'CP-CLOUD-RUN-MEMORY-ALLOCATION-TIME-' +
+        tierType.toUpperCase() + '-' + cpuAllocationType;
+
+    /** @type {number} */
+    let totalPrice = 0;
+    /** @type {number} */
+    let minimumInstanceCountPrice = 0;
+    const executionTimeSeconds =
+        newItem.items.editHook.initialInputs.executionTimeMs / 1000;
+    const requestCount = newItem.items.editHook.initialInputs.requestCount;
+    const minimumInstanceCount =
+        newItem.items.editHook.initialInputs.minimumInstanceCount;
+    const concurrency =
+        newItem.items.editHook.initialInputs.concurrencyRequestCount;
+    const memoryAllocation =
+        newItem.items.editHook.initialInputs.memoryAllocation;
+    const cpuAllocation = newItem.items.editHook.initialInputs.cpuAllocation;
+    // get Cpu Allocation cost
+    const cpuAllocationTime =
+        executionTimeSeconds * cpuAllocation * requestCount / concurrency;
+    const cpuAllocationCost =
+        this.calculateItemPrice(cpuSku, cpuAllocationTime, 'us');
+    totalPrice += cpuAllocationCost;
+    const memoryAllocationTime =
+        memoryAllocation * executionTimeSeconds * requestCount / concurrency;
+    const memoryAllocationCost =
+        this.calculateItemPrice(memorySku, memoryAllocationTime, 'us');
+    totalPrice += memoryAllocationCost;
+
+    if (cpuAllocationType == 'THROTTLED') {
+      const requestsSku = 'CP-CLOUD-RUN-REQUESTS-' + tierType.toUpperCase();
+      const requestsCost =
+          this.calculateItemPrice(requestsSku, requestCount, 'us');
+      totalPrice += requestsCost;
+    }
+
+    if (isCud) {
+      totalPrice = totalPrice * cudDiscount;
+    }
+
+    if (minimumInstanceCount > 0) {
+      minimumInstanceCpuSku = newItem.items.minimumInstanceCpuSku;
+      minimumInstanceMemorySku = newItem.items.minimumInstanceMemorySku;
+      const minimumInstanceCpuPrice = this.calculateItemPrice(
+          minimumInstanceCpuSku, minimumInstanceCount, 'us');
+      const minimumInstanceMemoryPrice = this.calculateItemPrice(
+          minimumInstanceMemorySku, minimumInstanceCount, 'us');
+      minimumInstanceCountPrice =
+          (minimumInstanceCpuPrice * cpuAllocation +
+           minimumInstanceMemoryPrice * memoryAllocation) *
+          this.TOTAL_BILLING_HOURS * 60 * 60;
+      if (isCud) {
+        minimumInstanceCountPrice = minimumInstanceCountPrice * cudDiscount;
+      }
+      totalPrice += minimumInstanceCountPrice;
+    }
+    newItem.price = totalPrice;
   }
 
   if (newItem.sku.indexOf('CP-CERTIFICATE-AUTHORITY') != -1 && recalc) {
@@ -1566,9 +1649,30 @@ CloudCalculator.prototype.addItemToCart = function(
     }
     const licence = newItem.items.editHook.initialInputs.dataBaseVersion;
     const region = newItem.items.editHook.initialInputs.location;
-    const coreCount = newItem.items.editHook.initialInputs.core;
     const hoursPerMonth = newItem.quantity;
     const licenceSku = 'CP-CLOUDSQLSERVER-LICENCING-' + licence.toUpperCase();
+    let coreCount, ram;
+
+    // For backwards compatibility
+    if (!newItem.items.version) {
+      newItem.items.editHook.initialInputs['instanceCount'] =
+          newItem.items.editHook.initialInputs.instance;
+      newItem.items.editHook.initialInputs.instance = 'custom';
+      newItem.items.editHook.initialInputs.custom = {};
+      newItem.items.editHook.initialInputs.custom['vcpu'] =
+          newItem.items.editHook.initialInputs.core;
+      newItem.items.editHook.initialInputs.custom['ram'] =
+          newItem.items.editHook.initialInputs.memory.value;
+    }
+
+    if (newItem.items.editHook.initialInputs.instance != 'custom') {
+      coreCount = newItem.items.coreCount;
+      ram = newItem.items.ram;
+    } else {
+      coreCount = newItem.items.editHook.initialInputs.custom.vcpu;
+      ram = newItem.items.editHook.initialInputs.custom.ram;
+    }
+
     // Instances with fewer than 4 vCPUs will be charged for SQL Server at 4
     // times the license rate.
     let vcpuQuantity = Math.max(4, coreCount);
@@ -1584,9 +1688,7 @@ CloudCalculator.prototype.addItemToCart = function(
         'CP-CLOUDSQLSERVER-VCPU' + cudSKu,
         coreCount * hoursPerMonth * haMultiplier, region);
     const memoryPrice = this.calculateItemPrice(
-        'CP-CLOUDSQLSERVER-MEMORY' + cudSKu,
-        newItem.items.editHook.initialInputs.memory.value * hoursPerMonth *
-            haMultiplier,
+        'CP-CLOUDSQLSERVER-MEMORY' + cudSKu, ram * hoursPerMonth * haMultiplier,
         region);
     const storagePrice = this.calculateItemPrice(
         'CP-CLOUDSQLSERVER-STORAGE', newItem.items.storage * haMultiplier,
@@ -1596,11 +1698,108 @@ CloudCalculator.prototype.addItemToCart = function(
         region);
     newItem.price =
         (licencePrice + vcpuPrice + memoryPrice + storagePrice + backupPrice) *
-        newItem.items.editHook.initialInputs.instance;
+        newItem.items.editHook.initialInputs.instanceCount;
   }
 
   if (newItem.sku.indexOf('CP-ML') != -1 && recalc) {
     newItem.price = newItem.oldPrice;
+  }
+
+  if (newItem.sku.indexOf('CP-COMPUTEENGINE-STORAGE-PD-READONLY') != -1 &&
+      recalc) {
+    let pdStorageCost = 0;
+    let pdStorageRegionalCost = 0;
+    let pdSsdStorageCost = 0;
+    let pdSsdStorageRegionalCost = 0;
+    let pdZonalBalancedPdCost = 0;
+    let pdRegionalBalancedPdCost = 0;
+    let extremePdCost = 0;
+    let extremePdIopsCountCost = 0;
+    let pdSnapshotStorageCost = 0;
+    let pdSnapshotStorageMultiRegionalCost = 0;
+    let totalPrice = 0;
+
+    if (newItem.items.pdStorage > 0) {
+      pdStorageCost = this.calculateItemPrice(
+          'CP-COMPUTEENGINE-STORAGE-PD-CAPACITY', newItem.items.pdStorage,
+          newItem.region);
+      newItem.items.pdStorageCost = pdStorageCost;
+    }
+
+    if (newItem.items.pdStorageRegional > 0) {
+      pdStorageRegionalCost = this.calculateItemPrice(
+          'CP-COMPUTEENGINE-STORAGE-PD-CAPACITY-REGIONAL',
+          newItem.items.pdStorageRegional, newItem.region);
+      newItem.items.pdStorageRegionalCost = pdStorageRegionalCost;
+    }
+
+    if (newItem.items.pdSsdStorage > 0) {
+      pdSsdStorageCost = this.calculateItemPrice(
+          'CP-COMPUTEENGINE-STORAGE-PD-SSD', newItem.items.pdSsdStorage,
+          newItem.region);
+      newItem.items.pdSsdStorageCost = pdSsdStorageCost;
+    }
+
+    if (newItem.items.pdSsdStorageRegional > 0) {
+      pdSsdStorageRegionalCost = this.calculateItemPrice(
+          'CP-COMPUTEENGINE-STORAGE-PD-SSD-REGIONAL',
+          newItem.items.pdSsdStorageRegional, newItem.region);
+      newItem.items.pdSsdStorageRegionalCost = pdSsdStorageRegionalCost;
+    }
+
+    if (newItem.items.pdZonalBalancedPd > 0) {
+      pdZonalBalancedPdCost = this.calculateItemPrice(
+          'CP-COMPUTEENGINE-ZONAL-BALANCED-PD', newItem.items.pdZonalBalancedPd,
+          newItem.region);
+      newItem.items.pdZonalBalancedPdCost = pdZonalBalancedPdCost;
+    }
+
+    if (newItem.items.pdRegionalBalancedPd > 0) {
+      pdRegionalBalancedPdCost = this.calculateItemPrice(
+          'CP-COMPUTEENGINE-REGIONAL-BALANCED-PD',
+          newItem.items.pdRegionalBalancedPd, newItem.region);
+      newItem.items.pdRegionalBalancedPdCost = pdRegionalBalancedPdCost;
+    }
+
+    if (newItem.items.extremePd > 0) {
+      extremePdCost = this.calculateItemPrice(
+          'CP-COMPUTEENGINE-STORAGE-PD-EXTREME', newItem.items.extremePd,
+          newItem.region);
+      newItem.items.extremePdCost = extremePdCost;
+    }
+
+    if (newItem.items.extremePdIopsCount > 0) {
+      extremePdIopsCountCost = this.calculateItemPrice(
+          'CP-COMPUTEENGINE-STORAGE-PD-EXTREME-IOPS',
+          newItem.items.extremePdIopsCount, newItem.region);
+      newItem.items.extremePdIopsCountCost = extremePdIopsCountCost;
+    }
+
+    if (newItem.items.pdSnapshotStorage > 0) {
+      pdSnapshotStorageCost = this.calculateItemPrice(
+          'CP-COMPUTEENGINE-STORAGE-PD-SNAPSHOT',
+          newItem.items.pdSnapshotStorage, newItem.region);
+      newItem.items.pdSnapshotStorageCost = pdSnapshotStorageCost;
+    }
+
+    if (newItem.items.pdSnapshotStorageMultiRegional > 0) {
+      pdSnapshotStorageMultiRegionalCost = this.calculateItemPrice(
+          'CP-COMPUTEENGINE-STORAGE-PD-SNAPSHOT-MULTI-REGIONAL',
+          newItem.items.pdSnapshotStorageMultiRegional, newItem.region);
+      newItem.items.pdSnapshotStorageMultiRegionalCost =
+          pdSnapshotStorageMultiRegionalCost;
+    }
+
+    totalPrice = pdStorageCost + pdStorageRegionalCost + pdSsdStorageCost +
+        pdSsdStorageRegionalCost + pdZonalBalancedPdCost +
+        pdRegionalBalancedPdCost + extremePdCost + extremePdIopsCountCost +
+        pdSnapshotStorageCost + pdSnapshotStorageMultiRegionalCost;
+
+    if (newItem.items.quantity > 0) {
+      totalPrice *= newItem.items.quantity;
+    }
+
+    newItem.price = totalPrice;
   }
 
   if (newItem.sku.indexOf('-PROF-') != -1 && recalc) {
@@ -1669,20 +1868,60 @@ CloudCalculator.prototype.addItemToCart = function(
   }
 
   if (newItem.sku.indexOf('CP-NETWORK-SERVICES-CLOUD-ARMOR') != -1 && recalc) {
-    let policiesVal = Number(newItem.items.editHook.initialInputs.policies);
-    let rulesVal = Number(newItem.items.editHook.initialInputs.rules);
-    let requests = newItem.items.valueInMillions;
-    // converted total number of requests measured per million
-    let requestsPerMillion = requests / 1000000;
-    let location = 'us';
-    let armorPolicyPrice = this.calculateItemPrice(
-        'CP-NETWORK-SERVICES-CLOUD-ARMOR-POLICY', policiesVal, location);
-    let armorRulePrice = this.calculateItemPrice(
-        'CP-NETWORK-SERVICES-CLOUD-ARMOR-RULE', rulesVal, location);
-    let armorRequestsPrice = this.calculateItemPrice(
-        'CP-NETWORK-SERVICES-CLOUD-ARMOR-REQUESTS', requestsPerMillion,
+    const requests = newItem.items.incomingRequests;
+    const location = 'us';
+
+    //For backwards compatibility
+    if (!newItem.items.commitmentType) {
+      newItem.items.commitmentType = 'STANDARD';
+    }
+
+    const commitmentType = newItem.items.commitmentType;
+    let totalPrice = 0;
+
+    if (commitmentType == 'PLUS') {
+      const protectedResources = newItem.items.editHook.initialInputs.protectedResources;
+      const egressCount = newItem.items.editHook.initialInputs.egressCount || 0;
+      const egressType = newItem.items.editHook.initialInputs.egressType;
+      const subscriptionCost = this.calculateItemPrice(
+        'CP-NETWORK-SERVICES-CLOUD-ARMOR-SUBSCRIPTION', 1, location);
+      const protectedResourcesCost = this.calculateItemPrice(
+        'CP-NETWORK-SERVICES-CLOUD-ARMOR-PROTECTED-RESOURCES', protectedResources,
         location);
-    let totalPrice = armorPolicyPrice + armorRulePrice + armorRequestsPrice;
+      let egressCost = 0;
+      if (egressCount > 0) {
+        egressCost = this.calculateItemPrice(
+          `CP-NETWORK-SERVICES-CLOUD-ARMOR-PROCESSING-${egressType.toUpperCase()}`,
+          egressCount, location);
+      }
+
+      newItem.items.subscriptionCost = subscriptionCost;
+      newItem.items.protectedResourcesCost = protectedResourcesCost;
+      newItem.items.egressCost = egressCost;
+
+      totalPrice = subscriptionCost + protectedResourcesCost + egressCost;
+    }
+    else {
+      const policiesVal = newItem.items.editHook.initialInputs.policies;
+      const rulesVal = newItem.items.editHook.initialInputs.rules;
+
+      // converted total number of requests measured per million
+      const requestsPerMillion = requests / 1000000;
+
+      const armorPolicyPrice = this.calculateItemPrice(
+        'CP-NETWORK-SERVICES-CLOUD-ARMOR-POLICY', policiesVal, location);
+      const armorRulePrice = this.calculateItemPrice(
+        'CP-NETWORK-SERVICES-CLOUD-ARMOR-RULE', rulesVal, location);
+      const armorRequestsPrice = this.calculateItemPrice(
+        'CP-NETWORK-SERVICES-CLOUD-ARMOR-REQUESTS', requestsPerMillion, location);
+
+      newItem.items.armorPolicyPrice = armorPolicyPrice;
+      newItem.items.armorRulePrice = armorRulePrice;
+      newItem.items.armorRequestsPrice = armorRequestsPrice;
+
+      totalPrice = armorPolicyPrice + armorRulePrice + armorRequestsPrice;
+    }
+
     newItem.price = totalPrice;
   }
 
@@ -1735,6 +1974,25 @@ CloudCalculator.prototype.addItemToCart = function(
     newItem.price = totalPrice;
   }
 
+  if (newItem.sku.indexOf('CP-SOURCE-REPOSITORY') != -1 && recalc) {
+    const userCount = Number(newItem.items.userCount);
+    const storage = Number(newItem.items.storage);
+    const networkEgress = Number(newItem.items.networkEgress);
+    let totalPrice = null;
+    if (userCount > 0) {
+      totalPrice += this.calculateTieredSKUPrice(
+          'CP-SOURCE-REPOSITORY-ACTIVE-USER', userCount);
+    }
+    if (storage > 0) {
+      totalPrice +=
+          this.calculateTieredSKUPrice('CP-SOURCE-REPOSITORY-STORAGE', storage);
+    }
+    if (networkEgress > 0) {
+      totalPrice += this.calculateTieredSKUPrice(
+          'CP-SOURCE-REPOSITORY-EGRESS', networkEgress);
+    }
+    newItem.price = totalPrice;
+  }
 
   if (newItem.sku.indexOf('CP-VPN') != -1 && recalc) {
     let vpn = newItem.quantity;
@@ -1754,24 +2012,61 @@ CloudCalculator.prototype.addItemToCart = function(
   if (newItem.sku.indexOf('CP-SECRET-MANAGER') != -1 && recalc) {
     const location = 'us-central1';
     const activeSecretVersions =
-      newItem.items.editHook.initialInputs.activeSecretVersions;
+        newItem.items.editHook.initialInputs.activeSecretVersions;
     const accessOperations =
-      newItem.items.editHook.initialInputs.accessOperations;
+        newItem.items.editHook.initialInputs.accessOperations;
     const rotationNotifications =
-      newItem.items.editHook.initialInputs.rotationNotifications;
+        newItem.items.editHook.initialInputs.rotationNotifications;
 
     const activeSecretVersionsCost = this.calculateItemPrice(
-      'CP-SECRET-MANAGER-ACTIVE-SECRET-VERSION', Number(activeSecretVersions),
-      location);
+        'CP-SECRET-MANAGER-ACTIVE-SECRET-VERSION', Number(activeSecretVersions),
+        location);
     const accessOperationsCost = this.calculateItemPrice(
-      'CP-SECRET-MANAGER-ACCESS-OPERATIONS', Number(accessOperations),
-      location) / 10000;
+                                     'CP-SECRET-MANAGER-ACCESS-OPERATIONS',
+                                     Number(accessOperations), location) /
+        10000;
     const rotationNotificationsCost = this.calculateItemPrice(
-      'CP-SECRET-MANAGER-ROTATION-NOTIFICATIONS', Number(rotationNotifications),
-      location);
+        'CP-SECRET-MANAGER-ROTATION-NOTIFICATIONS',
+        Number(rotationNotifications), location);
 
     const totalPrice = activeSecretVersionsCost + accessOperationsCost +
-      rotationNotificationsCost;
+        rotationNotificationsCost;
+    newItem.price = totalPrice;
+  }
+
+  if (newItem.sku.indexOf('CP-PUBSUB') != -1 && recalc) {
+    const daysMonthly = 30;
+    const volume = newItem.quantity || 0;
+    const subscriptionCount =
+        newItem.items.editHook.initialInputs.subscriptionCount || 0;
+    const topicDays = newItem.items.editHook.initialInputs.topicDays || 0;
+    const acknowledgedCount =
+        newItem.items.editHook.initialInputs.acknowledgedCount || 0;
+    const acknowledgedDays =
+        newItem.items.editHook.initialInputs.acknowledgedDays || 0;
+    const snapshotCount =
+        newItem.items.editHook.initialInputs.snapshotCount || 0;
+    const snapshotDays = newItem.items.editHook.initialInputs.snapshotDays || 0;
+
+    let quantity = daysMonthly * volume * (1 + subscriptionCount);
+    const baseCost = this.calculateItemPrice(
+        'CP-PUBSUB-MESSAGE-DELIVERY-BASIC', quantity, 'us');
+
+    quantity = volume * topicDays;
+    const topicRetentionCost =
+        this.calculateItemPrice('CP-PUBSUB-TOPIC-VOLUME', quantity, 'us');
+
+    quantity = volume * acknowledgedCount * acknowledgedDays;
+    const subscriptionRetentionCost = this.calculateItemPrice(
+        'CP-PUBSUB-RETAINED-BACKLOG-VOLUME', quantity, 'us');
+
+    quantity = 0.5 * 1 / daysMonthly * volume * snapshotDays * snapshotCount;
+    const snapshotCost = this.calculateItemPrice(
+        'CP-PUBSUB-SNAPSHOT-BACKLOG-VOLUME', quantity, 'us');
+
+    const totalPrice = baseCost + topicRetentionCost +
+        subscriptionRetentionCost + snapshotCost;
+
     newItem.price = totalPrice;
   }
 
@@ -1798,29 +2093,28 @@ CloudCalculator.prototype.addItemToCart = function(
     const recognition = initialInputs.recognition;
     const type = initialInputs.model.split('-')[1];
     const dataLogging = initialInputs.dataLogging;
-    const sku = dataLogging ?
-      `CP-SPEECH-TO-TEXT-${type}-LOGGING` :
-      `CP-SPEECH-TO-TEXT-${type}`;
+    const sku = dataLogging ? `CP-SPEECH-TO-TEXT-${type}-LOGGING` :
+                              `CP-SPEECH-TO-TEXT-${type}`;
 
     /*
      * The Speech-to-Text prices are per 15 seconds.
      * Hence we multiply it by 4 (60 sec/15 sec)
      */
-    const recognitionCost = this.calculateItemPrice(
-      sku, recognition, location) * 4;
+    const recognitionCost =
+        this.calculateItemPrice(sku, recognition, location) * 4;
     newItem.price = recognitionCost;
   }
 
   if (newItem.sku.indexOf('CP-BIGSTORE') != -1 && recalc) {
     const location = newItem.region;
     const egressLocation = 'us';
-    const storageClass = newItem.items.storageClass;
+    const storageClass = newItem.items.storageClass || 'standard';
     const sku = `CP-BIGSTORE-${storageClass.toUpperCase()}`;
-    const multiRegionalStorage = newItem.items.multiRegionalStorage;
-    const restoreSize = newItem.items.restoreSize;
-    const gcsClassAops = newItem.items.gcsClassAops;
-    const gcsClassBops = newItem.items.gcsClassBops;
-    const egress = newItem.items.egress;
+    const multiRegionalStorage = newItem.items.multiRegionalStorage || 0;
+    const restoreSize = newItem.items.restoreSize || 0;
+    const gcsClassAops = newItem.items.gcsClassAops || 0;
+    const gcsClassBops = newItem.items.gcsClassBops || 0;
+    const egress = newItem.items.egress || {};
     const addFreeTier = newItem.items.editHook.initialInputs.addFreeTier;
     let storageFreeQuota = 0;
     let gcsClassAopsFreeQuota = 0;
@@ -1840,20 +2134,20 @@ CloudCalculator.prototype.addItemToCart = function(
     }
 
     multiRegionalStorageCost = this.calculateItemPrice(
-      sku, multiRegionalStorage, location, storageFreeQuota);
+        sku, multiRegionalStorage, location, storageFreeQuota);
 
     if (storageClass != 'standard') {
-      restoreSizeCost = this.calculateItemPrice(
-      `${sku}-RESTORE-SIZE`, restoreSize, location);
+      restoreSizeCost =
+          this.calculateItemPrice(`${sku}-RESTORE-SIZE`, restoreSize, location);
     }
 
     gcsClassAopsCost = this.calculateItemPrice(
-      `${sku}-CLASS-A-REQUEST`, gcsClassAops * 100, location,
-      gcsClassAopsFreeQuota);
+        `${sku}-CLASS-A-REQUEST`, gcsClassAops * 100, location,
+        gcsClassAopsFreeQuota);
 
     gcsClassBopsCost = this.calculateItemPrice(
-      `${sku}-CLASS-B-REQUEST`, gcsClassBops * 100, location,
-      gcsClassBopsFreeQuota);
+        `${sku}-CLASS-B-REQUEST`, gcsClassBops * 100, location,
+        gcsClassBopsFreeQuota);
 
     for (const [egressType, egressValue] of Object.entries(egress)) {
       let egressFreeQuota = 0;
@@ -1863,12 +2157,47 @@ CloudCalculator.prototype.addItemToCart = function(
       }
 
       egressCost += this.calculateItemPrice(
-        `CP-STORAGE-EGRESS-${egressType}`, egressValue, egressLocation,
-        egressFreeQuota);
+          `CP-STORAGE-EGRESS-${egressType}`, egressValue, egressLocation,
+          egressFreeQuota);
     }
 
-    totalPrice = multiRegionalStorageCost + gcsClassAopsCost + gcsClassBopsCost
-      + egressCost + restoreSizeCost;
+    totalPrice = multiRegionalStorageCost + gcsClassAopsCost +
+        gcsClassBopsCost + egressCost + restoreSizeCost;
+    newItem.price = totalPrice;
+  }
+
+  if (newItem.sku.indexOf('CP-ANTHOS') != -1 && recalc) {
+    const cpuCount = newItem.quantity;
+    const totalPrice = this.calculateItemPrice(newItem.sku, cpuCount, 'us');
+    newItem.price = totalPrice;
+  }
+
+  if (newItem.sku.indexOf('CP-BQ-BI-ENGINE-ONDEMAND') != -1 &&
+      //For backwards compatibility
+      newItem.items.editHook.product != 'bqBiEngineFlatRate' && recalc) {
+    const memoryCapacity = newItem.items.memoryCapacity;
+    const freeTierQuota = newItem.items.editHook.initialInputs.addFreeTier ?
+      1 : 0;
+    const totalHours = newItem.items.totalHours || this.TOTAL_BILLING_HOURS;
+    const location = newItem.region;
+    const pricePerHour = this.calculateItemPrice(
+      'CP-BQ-BI-ENGINE-ONDEMAND', 1, location);
+    newItem.items.pricePerHour = pricePerHour;
+    const totalPrice = pricePerHour * (memoryCapacity - freeTierQuota) *
+      totalHours;
+    newItem.price = totalPrice;
+  }
+
+  if ((newItem.sku.indexOf('CP-BQ-BI-ENGINE-FLATRATE') != -1 ||
+      //For backwards compatibility
+      newItem.items.editHook.product == 'bqBiEngineFlatRate') && recalc) {
+    const paidMemoryCapacity = newItem.items.paidMemoryCapacity;
+    const totalHours = newItem.items.totalHours || this.TOTAL_BILLING_HOURS;
+    const location = newItem.region;
+    const pricePerHour = this.calculateItemPrice(
+      'CP-BQ-BI-ENGINE-ONDEMAND', 1, location);
+    newItem.items.pricePerHour = pricePerHour;
+    const totalPrice = pricePerHour * paidMemoryCapacity * totalHours;
     newItem.price = totalPrice;
   }
 
@@ -2151,6 +2480,214 @@ CloudCalculator.prototype.getUbuntuProOsPrice = function(os, sku, gpuCount) {
   return osPrice;
 };
 
+
+/**
+ * Retrieve saved data from the datastore.
+ */
+CloudCalculator.prototype.retrieveCartdata = function() {
+  const id = this.calculationId;
+
+  // This function is called twice. Once after getting `id` from
+  // browser / parent window and once after pricelist.json is loaded.
+  // This condition ensures that cart data is retrieved only after both are
+  // loaded i.e. second time it is called.
+  if (!id || Object.entries(this.cloudSkuData).length === 0 ||
+      this.isRetrieved) {
+    return;
+  }
+  this.isRetrieved = true;
+  this.http_({method: 'GET', url: '/api/get', params: {'id': id}})
+      .then(goog.bind(function(response) {
+        if (response.data.status === 'success') {
+          this.calculationId = id;
+          this.cartData_.currency = response.data.data.requested_currency;
+          this.normalizeCartData(response.data.data.cart);
+          goog.array.forEach(
+              response.data.data.cart, function recalculating(item) {
+                this.addItemToCart(item, null, true);
+              }.bind(this));
+          this.projectName = response.data.data.project;
+
+        } else {
+          console.warn('Empty data');
+        }
+      }, this), function(response) {
+        console.warn('Unable to get calculations');
+      });
+};
+
+/**
+ * Mapping for changed or obsolete SKUs
+ * @type {!Array<{oldSku: string, newSku: string}>}
+ */
+const skuMap = [
+  {oldSku: 'CP-BIGSTORE-STORAGE', newSku: 'CP-BIGSTORE-STANDARD'},
+  {
+    oldSku: 'CP-BIGSTORE-CLASS-A-REQUEST',
+    newSku: 'CP-BIGSTORE-STANDARD-CLASS-A-REQUEST'
+  },
+  {
+    oldSku: 'CP-BIGSTORE-CLASS-B-REQUEST',
+    newSku: 'CP-BIGSTORE-STANDARD-CLASS-B-REQUEST'
+  },
+  {oldSku: 'CP-BIGSTORE-STORAGE-NEARLINE', newSku: 'CP-BIGSTORE-NEARLINE'},
+  {oldSku: 'CP-NEARLINE-STORAGE', newSku: 'CP-BIGSTORE-NEARLINE-STORAGE'},
+  {
+    oldSku: 'CP-NEARLINE-RESTORE-SIZE',
+    newSku: 'CP-BIGSTORE-NEARLINE-RESTORE-SIZE'
+  },
+  {oldSku: 'CP-BIGSTORE-STORAGE-COLDLINE', newSku: 'CP-BIGSTORE-COLDLINE'},
+  {
+    oldSku: 'CP-BIGSTORE-DATA-RETRIEVAL-COLDLINE',
+    newSku: 'CP-BIGSTORE-COLDLINE-RESTORE-SIZE'
+  },
+  {oldSku: 'CP-BIGSTORE-STORAGE-ARCHIVE', newSku: 'CP-BIGSTORE-ARCHIVE'},
+  {
+    oldSku: 'CP-BIGSTORE-DATA-RETRIEVAL-ARCHIVE',
+    newSku: 'CP-BIGSTORE-ARCHIVE-RESTORE-SIZE'
+  },
+  {oldSku: 'CP-SPEECH-API-RECOGNITION', newSku: 'CP-SPEECH-TO-TEXT-STANDARD'},
+  {oldSku: 'CP-DATAPREP-UNITS', newSku: 'CP-DATAPREP-STARTER-UNIT'},
+  {
+    oldSku: 'CP-SECURITY-COMMAND-CENTER-DATA-VOLUME',
+    newSku: 'CP-SECURITY-COMMAND-CENTER-STANDARD'
+  },
+];
+
+const egressMap = {
+  destination: {
+    'AUSTRALIA': 'AUSTRALIA',
+    'CHINA': 'CHINA',
+    'EU': 'WORLDWIDE',
+    'NA': 'WORLDWIDE',
+    'WORLDWIDE': 'WORLDWIDE',
+  },
+};
+
+/**
+ * Checks saved data form datastore and updates
+ * removed/obsolete SKUs
+ * @param {!Array<!cloudpricingcalculator.SkuData>} cartItems
+ */
+CloudCalculator.prototype.normalizeCartData = function(cartItems) {
+  // Storage class is the third segment in the Sku
+  const getStorageClassFromSku = (sku) =>
+      sku.replace('CP-BIGSTORE-', '').split('-').shift().toLowerCase();
+
+  for (item of cartItems) {
+    try {
+      // Look for a new SKU mapping
+      const mappedSku = skuMap.find(sku => sku.oldSku === item.sku);
+      if (mappedSku) {
+        item.sku = mappedSku.newSku;
+
+        if (mappedSku.newSku.startsWith('CP-BIGSTORE')) {
+          item.items.editHook.product = 'cloudStorage';
+          item.items.storageClass = getStorageClassFromSku(mappedSku.newSku);
+          // Create placeholders for values, otherwise breaks CSV export.
+          // These values will be overwritten later if applicable.
+          item.items.gcsClassAops = 0;
+          item.items.gcsClassBops = 0;
+          item.items.restoreSize = 0;
+        }
+        if ([
+              'CP-BIGSTORE-STORAGE', 'CP-BIGSTORE-STORAGE-NEARLINE',
+              'CP-BIGSTORE-STORAGE-COLDLINE', 'CP-BIGSTORE-STORAGE-ARCHIVE'
+            ].includes(mappedSku.oldSku)) {
+          item.items.multiRegionalStorage = item.quantity;
+        }
+        if (['CP-BIGSTORE-CLASS-A-REQUEST'].includes(mappedSku.oldSku)) {
+          item.items.gcsClassAops =
+              item.items.editHook.initialInputs.classAops ||
+              item.items.editHook.initialInputs.classAOps;
+        }
+        if (['CP-BIGSTORE-CLASS-B-REQUEST'].includes(mappedSku.oldSku)) {
+          item.items.gcsClassBops =
+              item.items.editHook.initialInputs.classBops ||
+              item.items.editHook.initialInputs.classBOps;
+        }
+        if ([
+              'CP-NEARLINE-RESTORE-SIZE', 'CP-BIGSTORE-DATA-RETRIEVAL-COLDLINE',
+              'CP-BIGSTORE-DATA-RETRIEVAL-ARCHIVE'
+            ].includes(mappedSku.oldSku)) {
+          item.items.restoreSize = item.quantity;
+        }
+        if (mappedSku.oldSku === 'CP-SPEECH-API-RECOGNITION') {
+          item.items.editHook.initialInputs.model = 'DEFAULT-STANDARD';
+        }
+        if (mappedSku.oldSku === 'CP-DATAPREP-UNITS') {
+          item.items.editHook.initialInputs.edition = 'STARTER';
+        }
+        if (mappedSku.oldSku === 'CP-SECURITY-COMMAND-CENTER-DATA-VOLUME') {
+          item.items.tierType = 'STANDARD';
+          item.items.dataVolume = item.quantity;
+        }
+      } else {  // These are existing SKUs with updated calculation
+        if (item.sku.startsWith('CP-COMPUTEENGINE-VMIMAGE') &&
+            item.items.editHook.product === 'containerEngine') {
+          if (item.items.gpuCountVailCount === undefined) {
+            item.items.hoursPerMonth = item.items.hoursPerMonth ||
+                item.quantity || this.TOTAL_BILLING_HOURS;
+            item.items.gpuCountVailCount =
+                item.items.gpuCount * item.items.hoursPerMonth;
+          }
+        }
+        if (item.sku.startsWith('CP-BIGSTORE')) {
+          item.items.editHook.product = 'cloudStorage';
+          item.items.storageClass = getStorageClassFromSku(item.sku);
+        }
+        if ([
+              'CP-BIGSTORE-NEARLINE-CLASS-A-REQUEST',
+              'CP-BIGSTORE-COLDLINE-CLASS-A-REQUEST',
+              'CP-BIGSTORE-ARCHIVE-CLASS-A-REQUEST'
+            ].includes(item.sku)) {
+          item.items.gcsClassAops =
+              item.items.editHook.initialInputs.classAops ||
+              item.items.editHook.initialInputs.classAOps;
+        }
+        if ([
+              'CP-BIGSTORE-NEARLINE-CLASS-B-REQUEST',
+              'CP-BIGSTORE-COLDLINE-CLASS-B-REQUEST',
+              'CP-BIGSTORE-ARCHIVE-CLASS-B-REQUEST'
+            ].includes(item.sku)) {
+          item.items.gcsClassBops =
+              item.items.editHook.initialInputs.classBops ||
+              item.items.editHook.initialInputs.classBOps;
+        }
+        if (item.sku.startsWith('CP-CLOUD-RUN')) {
+          item.items.tierType = item.items.tierType || 'TIER1';
+        }
+        if (item.sku.startsWith('CP-INTERNET-EGRESS-PREMIUM')) {
+          if (!this.cloudSkuData[item.sku]) {
+            const [egressTo, from] = item.sku.split('-FROM-');
+            const [, to] = egressTo.split('-TO-');
+            item.sku = `CP-INTERNET-EGRESS-PREMIUM-TIER-TO-${
+                egressMap.destination[to]}-FROM-${item.region.toUpperCase()}`;
+          }
+        }
+        if (item.sku.startsWith('CP-DB-N1')) {
+          // Update legacy CP-DB-N1 SKUs to CUSTOM (example:
+          // "CP-DB-N1-STANDARD-2-CUD-3-YEAR")
+          const skuParts = item.sku.split('-');
+          const highMem = skuParts[3] === 'HIGHMEM';
+          const cpu = Number(skuParts[4]);
+          const cud = Number(skuParts[6]);
+          if (cpu) {
+            const ram = cpu * (highMem ? 6.5 : 3.75);
+            item.items.editHook.initialInputs.instance = 'custom';
+            item.items.editHook.initialInputs.custom = {vcpu: cpu, ram: ram};
+            item.sku = `CP-DB-CUSTOM-${cpu}-${ram}`;
+            if (cud) {
+              item.sku += `-CUD-${cud}-YEAR`;
+            }
+          }
+        }
+      }
+    } catch {
+      console.log('Failed to normalize historical data');
+    }
+  }
+};
 
 /**
  * Gets the pricing for Container Engine from pricing JSON.
@@ -2443,11 +2980,13 @@ CloudCalculator.prototype.getInstanceType = function(sku) {
  * Gets list of supported regions for chosen GPU type.
  * @param {string} gpu GPU type.
  * @param {string} baseGpuSku base GPU SKU.
+ * @param {number} cud CUD term.
  * @return {!Array<string>} list of supported regions.
  * @export
  */
-CloudCalculator.prototype.getGpuRegionList = function(gpu, baseGpuSku) {
-  const sku = baseGpuSku + gpu;
+CloudCalculator.prototype.getGpuRegionList = function(gpu, baseGpuSku, cud) {
+  const sku =
+      cud ? `${baseGpuSku}${gpu}-CUD-${cud}-YEAR` : `${baseGpuSku}${gpu}`;
   const skuData = this.cloudSkuData[sku];
   let result = [];
   goog.object.forEach(skuData, function(val, key) {

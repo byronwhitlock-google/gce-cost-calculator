@@ -107,7 +107,7 @@ class App extends React.Component {
     var oml = this.state.machineList
     for (var i in this.state.machineList) {
       let curMachine = this.state.machineList[i]
-      //let family =  // not actually family, but different types without hte 
+      //let series =  // not actually series, but different types without hte 
       
       /// calculate custom types
       //TODO: need min/max cpu/mem values here
@@ -164,32 +164,32 @@ class App extends React.Component {
   /// machineTypeName: n2-highcpu-2
   getSkus(machineTypeName) {
 
-    var family = machineTypeName.split('-').at(0).toLowerCase()
+    var series = machineTypeName.split('-').at(0).toLowerCase()
     var custom=false
     if (machineTypeName.toLowerCase().includes("custom")) {
       custom=true
     }
 
-    var matchStandardRam = new RegExp(`^${family} Instance Ram`,'i')
-    var matchStandardCpu = new RegExp(`^${family} Instance Core`,'i')
+    var matchStandardRam = new RegExp(`^${series} Instance Ram`,'i')
+    var matchStandardCpu = new RegExp(`^${series} Instance Core`,'i')
 
-    var matchCustomRam = new RegExp(`^${family} Custom Instance Ram`,'i')
-    var matchCustomCpu = new RegExp(`^${family} Custom Instance Core`,'i')
-    if (family == 'e2') {
+    var matchCustomRam = new RegExp(`^${series} Custom Instance Ram`,'i')
+    var matchCustomCpu = new RegExp(`^${series} Custom Instance Core`,'i')
+    if (series == 'e2') {
       matchCustomRam = matchStandardRam
       matchCustomCpu = matchStandardCpu
     }
 
-    if (family == 'n1') {
-      matchCustomRam = matchStandardRam = new RegExp(`^${family}.+ ram`,'ig')
-      matchCustomCpu = matchStandardCpu = new RegExp(`^${family}.+ core`,'ig')
+    if (series == 'n1') {
+      matchCustomRam = matchStandardRam = new RegExp(`^${series}.+ ram`,'ig')
+      matchCustomCpu = matchStandardCpu = new RegExp(`^${series}.+ core`,'ig')
     }
 
-     if (family == 'n2d') {
-      matchStandardRam = new RegExp(`^${family} AMD Instance Ram running`,'i')
-      matchStandardCpu = new RegExp(`^${family} AMD Instance Core running`,'i')
-      matchCustomRam = new RegExp(`^${family} AMD Custom Instance Ram running`,'i')
-      matchCustomCpu = new RegExp(`^${family} AMD Custom Instance Core running`,'i')
+     if (series.includes('2d')) {
+      matchStandardRam = new RegExp(`^${series} AMD Instance Ram running`,'i')
+      matchStandardCpu = new RegExp(`^${series} AMD Instance Core running`,'i')
+      matchCustomRam = new RegExp(`^${series} AMD Custom Instance Ram running`,'i')
+      matchCustomCpu = new RegExp(`^${series} AMD Custom Instance Core running`,'i')
      }
 
     let skus = []
@@ -198,7 +198,7 @@ class App extends React.Component {
         var desc = sku['description'].toLowerCase()
 
 
-       if (family)
+       if (series)
         var push =false
         if (custom) {
           if (desc.match(matchCustomCpu)) {

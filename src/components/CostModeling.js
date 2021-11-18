@@ -77,8 +77,7 @@ class CostModeling extends React.Component {
             <Grid container spacing={2}>
             <Grid item xs={12} md={4}>
                 <Item>
-                    <h2>Select Region: </h2>
-                    <Item>
+                    <h2>Region:&nbsp;                
                             <Select
                                 value={this.state.filter.region}
                                 onChange={this.handleChangeRegion}
@@ -87,24 +86,21 @@ class CostModeling extends React.Component {
                                 id: 'region',
                                 }}
                             >
-                                <MenuItem value="">
-                                    <em>All</em>
-                                </MenuItem>
                                 {this.regions.map((region, key) =>
-                                <MenuItem value={region.id}>{region.id} ({region.name})</MenuItem>       
+                                <MenuItem value={region.id}>{region.name} ({region.id})</MenuItem>       
                                 ) }
                             </Select>                    
-                    </Item>
+                     </h2>
 
                     <Tooltip title="Instance Geometry parameters determined by current count, utilization and desired utilization of the resource.">
-                        <h2>Optimize Machine Geometry </h2>
+                        <h2>Machine Geometry Recommender</h2>
                     </Tooltip>
                     
                     
-                    <CostModelingGeometry title="vCpu" type ="Cores"  onChange={this.props.onInputChanged}/>       
-                    <CostModelingGeometry title="Memory" type ="Gigabytes" onChange={this.props.onInputChanged}/>       
-                    <CostModelingGeometry title="PD-Boot" type ="Disk GB" onChange={this.props.onInputChanged}/>       
-                    <CostModelingGeometry title="SSD-PD" type ="Disk GB" onChange={this.props.onInputChanged}/>       
+                    <CostModelingGeometry title="vCpu" type ="Cores"  onChange={this.props.onInputChanged} {...this.props}/>       
+                    <CostModelingGeometry title="Memory" type ="Gigabytes" onChange={this.props.onInputChanged} {...this.props}/>       
+                    <CostModelingGeometry title="PD-Boot" type ="Disk GB" onChange={this.props.onInputChanged} {...this.props}/>       
+                    <CostModelingGeometry title="SSD-PD" type ="Disk GB" onChange={this.props.onInputChanged} {...this.props}/>       
                 
                 </Item>
                 <Item>
@@ -113,6 +109,7 @@ class CostModeling extends React.Component {
                         title="Discount" 
                         value="5"
                         type="%"
+                        {...this.props}
 
                     />
                 </Item>
@@ -123,21 +120,25 @@ class CostModeling extends React.Component {
                         title="Sustained Use Discount" 
                         value="6"
                         type="Months"
+                        {...this.props}
                     />
                     <GenericGeometry 
                         title="On-Demand Period" 
                         value="6"
                         type="Months"
+                        {...this.props}
                     />
                     <GenericGeometry 
                         title="CUD Period" 
                         value="3 Years"
                         type="Years"
+                        {...this.props}
                     />
                     <GenericGeometry 
                         title="Term" 
                         value="48"
                         type="Months"
+                        {...this.props}
                     />                                
                 </Item>
             </Grid>

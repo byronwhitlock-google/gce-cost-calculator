@@ -22,7 +22,8 @@ class InstanceList extends React.Component {
                 <tr key={sku.skuId}>
                     <td>{sku.category.resourceGroup}</td><td>{sku.description}</td> 
                     <td>
-                        {this.formatPrice(sku)}
+                        {//this.formatPrice(sku)
+                        }
                     </td>
                     <td>
                        {JSON.stringify(sku, null, 2)}

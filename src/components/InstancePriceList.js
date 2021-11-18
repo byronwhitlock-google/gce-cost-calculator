@@ -13,8 +13,8 @@ class InstancePriceList extends React.Component {
             <table width='100%' key="mytables">
             <thead>
                     <tr>
-                        <th>Name </th>
-                        <th>Family</th>
+                        <th>Instance</th>
+                        <th>Series</th>
                         <th>CPU</th>
                         <th>Memory</th>
                         <th>Price</th>
@@ -24,7 +24,7 @@ class InstancePriceList extends React.Component {
             {this.props.machineList && this.props.machineList.map((machine,key) =>
                 <tr key={key}>
                     <td>{machine.type}</td>
-                    <td>{machine.family}</td>
+                    <td>{machine.series}</td>
                     <td>{machine.vcpu}</td> 
                     <td>{machine.memory}</td>
                     <td>

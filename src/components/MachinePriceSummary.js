@@ -105,19 +105,22 @@ class MachinePriceSummary extends React.Component {
             </tbody>
         )
         
-        return (
-            <Accordion expanded={this.state.isOpen} onChange={this.toggleOpen}>
-                <AccordionSummary
-                expandIcon={<ExpandMoreIcon />}
-                aria-controls="panel1a-content"
-                id="panel1a-header">
-                   <NumberFormat value={totalPrice} displayType={'text'} decimalScale='2' housandSeparator={true} prefix={'$'} />&nbsp;per hour
-                </AccordionSummary>
-                <AccordionDetails>
-                    <table>{machineDetails}</table>
-                </AccordionDetails>
-            </Accordion>
-        )
+        if (totalPrice == 0) 
+            return ( <Typography  color="secondary"> This instance type is not available in this region.</Typography>)
+        else
+            return (
+                <Accordion expanded={this.state.isOpen} onChange={this.toggleOpen}>
+                    <AccordionSummary
+                    expandIcon={<ExpandMoreIcon />}
+                    aria-controls="panel1a-content"
+                    id="panel1a-header">
+                    <NumberFormat value={totalPrice} displayType={'text'} decimalScale='2' housandSeparator={true} prefix={'$'} />&nbsp;per hour
+                    </AccordionSummary>
+                    <AccordionDetails>
+                        <table>{machineDetails}</table>
+                    </AccordionDetails>
+                </Accordion>
+            )
     }
     
 }

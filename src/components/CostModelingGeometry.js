@@ -11,6 +11,21 @@ import ArrowRightAltRoundedIcon from '@material-ui/icons/ArrowRightAltRounded';
 import Grid from '@material-ui/core/Grid';
 import Tooltip from '@material-ui/core/Tooltip';
 import GeometryModel from '../lib/GeometryModel';
+import Slider from '@material-ui/core/Slider'
+import { Box } from '@material-ui/core';
+import ArrowRightAltIcon from '@material-ui/icons/ArrowRightAlt';
+
+
+import Paper from '@material-ui/core/Paper';
+import { styled } from '@material-ui/core/styles';
+
+const Item = styled(Paper)(({ theme }) => ({
+  ...theme.typography.body2,
+  padding: theme.spacing(1),
+  textAlign: 'left',
+  color: theme.palette.text.secondary,
+}));
+
 class CostModelingGeometry extends React.Component {
     constructor(props, context) {
         super(props,context);
@@ -18,6 +33,7 @@ class CostModelingGeometry extends React.Component {
         this.handleUpdateUtilization = this.handleUpdateUtilization.bind(this)
         this.handleUpdateUtilizationDesired = this.handleUpdateUtilizationDesired.bind(this)
         this.toggleOpen = this.toggleOpen.bind(this)
+        this.handleSliderChange = this.handleSliderChange.bind(this)
         
     }  
 
@@ -27,7 +43,8 @@ class CostModelingGeometry extends React.Component {
             current: '',
             utilization: 0,
             utilization_desired: 0,
-            recommended:0
+            recommended:0,
+            spread:20
         }
     
 
@@ -113,11 +130,18 @@ class CostModelingGeometry extends React.Component {
             this.saveState()     
         }
     }
+
+    handleSliderChange(event, newValue){
+        this.setState({spread: newValue});
+    }
     
     render () {
         let title = this.props.title
         let type = this.props.type
         console.log("rendering")
+
+        var min_recommended = (this.state.recommended - (this.state.recommended * this.state.spread/100)).toFixed(0)
+        var max_recommended = (this.state.recommended + (this.state.recommended * this.state.spread/100)).toFixed(0)
 console.log(this.state)
         return (
                 <Accordion expanded={this.state.isOpen} onChange={this.toggleOpen}>
@@ -133,45 +157,93 @@ console.log(this.state)
                         <table width="100%">
                             <tr>
                                 <td>
-                                    <Tooltip title={`Current ${title}`}>
-                                        <Typography>
-                                        <TextField  
-                                            label={`Current ${title}`} 
-                                            value={`${this.state.current} ${type}`}
-                                            onChange={this.handleUpdateCurrent}
-                                            size="small"/> 
-                                        </Typography>                                                                
-                                    </Tooltip> 
-                                    <Tooltip title={`Current Utilization`} >
-                                        <Typography>
-                                            <TextField  
-                                                label={`Current Utilization`} 
-                                                value={`${this.state.utilization} %`}
-                                                onChange={this.handleUpdateUtilization}
-                                                size="small"/>
-                                        </Typography>      
-                                    </Tooltip>                   
-                                    <Tooltip title={`Desired Utilization`} >
-                                        <Typography>
-                                            <TextField  
-                                                label={`Desired Utilization`} 
-                                                value={`${this.state.utilization_desired} %`}
-                                                onChange={this.handleUpdateUtilizationDesired}
-                                                size="small"/>
-                                        </Typography>    
-                                    </Tooltip>
+           
+
+                                    <Accordion>
+                                        <AccordionSummary
+                                        expandIcon={<ExpandMoreIcon />}
+                                        aria-controls="panel1a-content"
+                                        id="panel1a-header"
+                                        >
+                                       <b>
+                                            <Tooltip title={`Current ${title}`}>
+                                                <Typography>
+                                                <TextField  
+                                                    label={`${title}`} 
+                                                    value={`${this.state.current}`}
+                                                    onChange={this.handleUpdateCurrent}
+                                                    size="small"/> 
+                                                </Typography>                                                                
+                                            </Tooltip>  {type} </b> @ {this.state.utilization_desired}% Utilization
+                                        </AccordionSummary>
+
+                                        <AccordionDetails> 
+                                            <h6>Utilization</h6>                                               
+                                            <Tooltip title={`Curr Util`} >
+                                                <Typography>
+                                                    <TextField  
+                                                        label={`Current`} 
+                                                        value={`${this.state.utilization} %`}
+                                                        onChange={this.handleUpdateUtilization}
+                                                        size="small"/>
+                                                </Typography>      
+                                            </Tooltip>                   
+                                            <Tooltip title={`Desired`} >
+                                                <Typography>
+                                                    <TextField  
+                                                        label={`Desired`} 
+                                                        value={`${this.state.utilization_desired} %`}
+                                                        onChange={this.handleUpdateUtilizationDesired}
+                                                        size="small"/>
+                                                </Typography>    
+                                            </Tooltip>
+                                        </AccordionDetails>
+                                    </Accordion>           
                                 </td>
+                                <td>&nbsp;&nbsp;&nbsp;{/*i got hacks from the 90s table layout till i die*/}</td>
                                 <td>
-                                    <Typography  color="primary" variant="h5">
-                                        <center>
-                                            <b>= {this.state.recommended}  {type}</b> 
-                                        </center>
-                                    </Typography>    
+                                    <Accordion>
+                                        <AccordionSummary
+                                        expandIcon={<ExpandMoreIcon />}
+                                        aria-controls="panel1a-content"
+                                        id="panel1a-header"
+                                        >
+                                            <Typography  color="primary" variant="h5">
+                                                <center>
+                                                    <b>{min_recommended} to {max_recommended}  {type}</b> 
+                                                </center>
+                                            </Typography>  
+                                        </AccordionSummary>
+                                        <AccordionDetails>
+                                            <table><tr><td>
+                                            <Slider
+                                                    aria-label={`${type} Spread`}
+                                                    valueLabelDisplay="auto"
+                                                    defaultValue={20}
+                                                    getAriaValueText={(value) => {return `${value}%`}}
+                                                    onChange={this.handleSliderChange}
+                                                    size="small"
+                                                    aria-label="Small"                                                    
+                                                    min={0}
+                                                    max={100}
+                                                /> 
+                                            </td></tr><tr><td>
+                                            {`Increasing ${type} spread (min/max) will match more machine types in right panel`}
+                                            <span style={{float:'right'}}><ArrowRightAltIcon/></span>
+                                            </td></tr>
+                                            </table>
+                                        </AccordionDetails>
+                                    </Accordion>        
+                                    
+
                                 </td>
                             </tr>
                         </table>
+                        
                     </AccordionDetails>
-                </Accordion>                
+                    
+                </Accordion>        
+                        
             );
         }
 }
