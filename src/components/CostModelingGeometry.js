@@ -34,6 +34,8 @@ class CostModelingGeometry extends React.Component {
         this.handleUpdateUtilizationDesired = this.handleUpdateUtilizationDesired.bind(this)
         this.toggleOpen = this.toggleOpen.bind(this)
         this.handleSliderChange = this.handleSliderChange.bind(this)
+        this.handleFocus = this.handleFocus.bind(this)
+        
         
     }  
 
@@ -48,22 +50,12 @@ class CostModelingGeometry extends React.Component {
         }
     
 
-    async componentDidMount(){
-
+    componentDidMount(){
         // load model data from localStorage
         let model = new GeometryModel(this.props.title, this.props.type)
-        await model.calculateRecommendation()
-        
         this.props.onChange(model)
-        
-        //set default state from localStorage
-        this.setState({
-            isOpen: model.isOpen,
-            current: model.current,
-            utilization: model.utilization,
-            utilization_desired: model.utilization_desired ,
-            recommended: model.recommended
-        })
+        //super.setState({...model})
+       //window.alert("hola")
     }
 
     cleanup (text) {
@@ -73,10 +65,15 @@ class CostModelingGeometry extends React.Component {
             return text
         }
     }
-    async saveState() {
+
+    // loads model from state
+    getModelFromState() {
         let model = new GeometryModel(this.props.title, this.props.type)
         model.isOpen= this.state.isOpen
 
+        if (this.state.spread>0) {
+            model.spread = this.cleanup(this.state.spread)
+        }
         if (this.state.current) {
             model.current= this.cleanup(this.state.current)
         }
@@ -86,30 +83,26 @@ class CostModelingGeometry extends React.Component {
         if (this.state.utilization_desired) {
             model.utilization_desired= this.cleanup(this.state.utilization_desired)
         }
+        model.calculateRecommendation()
+        return model
+    }
+    // set state and persists model in local storage
+    async setState(state) {
+        await super.setState(state)
 
-        await model.calculateRecommendation()
-        if (model.recommended) {
-            // update recommended calculation
-            this.setState({...this.state,recommended: model.recommended})
-            
-            this.props.onChange(model)
-        }
-
-        await model.persist()
-        
-
+        let model = this.getModelFromState()            
+        this.props.onChange(model)
+        model.persist()
     }
 
     async toggleOpen() {        
-        await this.setState({...this.state, isOpen: !this.state.isOpen})
-        this.saveState()
+        this.setState({isOpen: !this.state.isOpen})
     }
     
     async handleUpdateCurrent(evt) {
         let current = evt.target.value.replace( /[^0-9]/g, '' ); 
         if (current) {
-            await this.setState({...this.state,current: current})
-            this.saveState()
+            this.setState({current: current})            
         }
     }
     async handleUpdateUtilization(evt) {
@@ -117,8 +110,7 @@ class CostModelingGeometry extends React.Component {
         if (utilization > 100) {
             this.props.setError("Utilization cannot exceed 100%")
         } else if (utilization) {
-            await this.setState({...this.state,utilization: utilization})
-            this.saveState()
+            this.setState({utilization: utilization})
         }
     }
     async handleUpdateUtilizationDesired(evt) {
@@ -126,32 +118,42 @@ class CostModelingGeometry extends React.Component {
         if (utilization_desired > 100) {
             this.props.setError("Desired Utilization cannot be exceed  100%")
         } else if (utilization_desired) {
-            await this.setState({...this.state,utilization_desired: utilization_desired})
-            this.saveState()     
+            this.setState({utilization_desired: utilization_desired})            
         }
     }
 
-    handleSliderChange(event, newValue){
-        this.setState({spread: newValue});
+    async handleSliderChange(event, spread){
+        this.setState({spread: spread});        
     }
+    handleFocus = (event) => { event.preventDefault(); event.target.select();}
     
     render () {
         let title = this.props.title
         let type = this.props.type
-        console.log("rendering")
 
-        var min_recommended = (this.state.recommended - (this.state.recommended * this.state.spread/100)).toFixed(0)
-        var max_recommended = (this.state.recommended + (this.state.recommended * this.state.spread/100)).toFixed(0)
-console.log(this.state)
+        var model = this.getModelFromState()
+
+        var min_recommended = model.min_recommended
+        var max_recommended = model.max_recommended
+        
+        var min_utilization_actual = model.min_utilization_actual
+        var max_utilization_actual = model.max_utilization_actual
+        
+
+        var recommendation = <React.Fragment>{min_recommended} to {max_recommended} {this.props.type}</React.Fragment>
+        let utilization_actual =  <React.Fragment>{max_utilization_actual}%</React.Fragment>
+        if ((min_recommended == max_recommended ) || ! this.props.hideSpread) {
+            // recommendation = <React.Fragment>{max_recommended} {this.props.type}</React.Fragment>            
+        }
+        
         return (
-                <Accordion expanded={this.state.isOpen} onChange={this.toggleOpen}>
+                <Accordion expanded={model.isOpen} onChange={this.toggleOpen}>
                     <AccordionSummary
                     expandIcon={<ExpandMoreIcon />}
                     aria-controls="panel1a-content"
                     id="panel1a-header">
-                        <Typography variant="h6">{title}&nbsp;&nbsp;</Typography> 
-                        
-                        <Typography  hidden={this.state.isOpen} color="primary">{this.state.recommended}  {type} </Typography>
+                        <Typography variant="h6">{title}:&nbsp;&nbsp;</Typography>                         
+                        <Typography  variant="h6" hidden={model.isOpen} color="primary"> {recommendation}</Typography>
                     </AccordionSummary>
                     <AccordionDetails>
                         <table width="100%">
@@ -169,21 +171,26 @@ console.log(this.state)
                                             <Tooltip title={`Current ${title}`}>
                                                 <Typography>
                                                 <TextField  
+                                                    onFocus={this.handleFocus} 
+                                                    
                                                     label={`${title}`} 
-                                                    value={`${this.state.current}`}
+                                                    value={`${model.current}`}
                                                     onChange={this.handleUpdateCurrent}
+        
                                                     size="small"/> 
                                                 </Typography>                                                                
-                                            </Tooltip>  {type} </b> @ {this.state.utilization_desired}% Utilization
+                                            </Tooltip>  
+                                            {type} </b>
                                         </AccordionSummary>
-
-                                        <AccordionDetails> 
+                                        
+                                        <AccordionDetails > 
                                             <h6>Utilization</h6>                                               
                                             <Tooltip title={`Curr Util`} >
                                                 <Typography>
                                                     <TextField  
+                                                    onFocus={this.handleFocus} 
                                                         label={`Current`} 
-                                                        value={`${this.state.utilization} %`}
+                                                        value={`${model.utilization} %`}
                                                         onChange={this.handleUpdateUtilization}
                                                         size="small"/>
                                                 </Typography>      
@@ -191,8 +198,9 @@ console.log(this.state)
                                             <Tooltip title={`Desired`} >
                                                 <Typography>
                                                     <TextField  
+                                                    onFocus={this.handleFocus} 
                                                         label={`Desired`} 
-                                                        value={`${this.state.utilization_desired} %`}
+                                                        value={`${model.utilization_desired} %`}
                                                         onChange={this.handleUpdateUtilizationDesired}
                                                         size="small"/>
                                                 </Typography>    
@@ -204,24 +212,28 @@ console.log(this.state)
                                 <td>
                                     <Accordion>
                                         <AccordionSummary
-                                        expandIcon={<ExpandMoreIcon />}
+                                        expandIcon={this.props.hideSpread ? null:<ExpandMoreIcon />}
                                         aria-controls="panel1a-content"
                                         id="panel1a-header"
                                         >
                                             <Typography  color="primary" variant="h5">
                                                 <center>
-                                                    <b>{min_recommended} to {max_recommended}  {type}</b> 
+                                                    <b>
+                                                        { this.props.hideSpread ? <span >= </span>:<span> &#x02248; </span>} 
+                                                        {recommendation}</b> 
                                                 </center>
                                             </Typography>  
                                         </AccordionSummary>
+                                        {this.props.hideSpread ||
                                         <AccordionDetails>
                                             <table><tr><td>
+                                                {type} Spread: {model.recommended} {type} &plusmn; {this.state.spread}% 
                                             <Slider
                                                     aria-label={`${type} Spread`}
                                                     valueLabelDisplay="auto"
-                                                    defaultValue={20}
+                                                    defaultValue={this.state.spread}
                                                     getAriaValueText={(value) => {return `${value}%`}}
-                                                    onChange={this.handleSliderChange}
+                                                    onChangeCommitted={this.handleSliderChange}
                                                     size="small"
                                                     aria-label="Small"                                                    
                                                     min={0}
@@ -232,7 +244,7 @@ console.log(this.state)
                                             <span style={{float:'right'}}><ArrowRightAltIcon/></span>
                                             </td></tr>
                                             </table>
-                                        </AccordionDetails>
+                                        </AccordionDetails> }
                                     </Accordion>        
                                     
 

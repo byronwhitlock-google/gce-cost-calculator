@@ -28,7 +28,11 @@ class InstancePriceList extends React.Component {
                     <td>{machine.vcpu}</td> 
                     <td>{machine.memory}</td>
                     <td>
-                        <MachinePriceSummary {...machine}/>
+                        <MachinePriceSummary {...machine} 
+                      
+                       pdssd={this.props.pdssd}
+                       pdboot={this.props.pdboot}
+                        />
                      </td>      
                 </tr>          
             ) }

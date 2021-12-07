@@ -12,7 +12,7 @@ import TextField from '@material-ui/core/TextField'
 
 export default function GenericGeometry(props) {
   return (
-        <Accordion>
+        <Accordion disabled={true}>
             <AccordionSummary
             expandIcon={<ExpandMoreIcon />}
             aria-controls="panel1a-content"

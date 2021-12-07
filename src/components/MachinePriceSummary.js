@@ -42,8 +42,6 @@ class MachinePriceSummary extends React.Component {
                 <th>Description</th>
                 <th>Unit Price</th>
                 <th></th>
-                <th>Units</th>
-                <th></th>
                 <th>Subtotal</th>
                 
             </thead>
@@ -56,12 +54,21 @@ class MachinePriceSummary extends React.Component {
             var type = sku['category']['resourceGroup']
             var calculatedType = sku['calculatedType']
             var desc = sku['description']
-            var unitPrice = this.getPrice(sku)
+            var unitPrice =  parseFloat(this.getPrice(sku))
             var unit = this.getUnit(sku)
-            var machinePrice = 0.0
+            
+            // change units to months
+            if (unit.includes('hour')) {
+                unit = unit.replace('hour',"month")
+                unitPrice = unitPrice * 730
+            }
+
+            var machinePrice = unitPrice
             var units = 0
             
             var comment
+            
+
             if (type == 'CPU' || calculatedType == 'CPU') {
                 
                 unit ='core ' + unit
@@ -69,11 +76,20 @@ class MachinePriceSummary extends React.Component {
 
             } else if(type == 'RAM' || calculatedType == 'RAM') {
                 units = this.props.memory
+   
+            } else if(type == 'SSD' || calculatedType == 'SSD') {
+                units = this.props.pdssd
+                machinePrice = (unitPrice * units)
+            } else if(type == 'PD' || calculatedType == 'PD') {
+                units = this.props.pdboot
+                machinePrice = (unitPrice * units)
+                
             } else {
-                desc += " !!! Not found. Not included in price!!!! "
+               // desc += " !!! Not found. Not included in price!!!! "
             }
 
-            machinePrice += (unitPrice * units)
+
+             
             totalPrice += machinePrice
 
             machineDetails.push (
@@ -82,13 +98,15 @@ class MachinePriceSummary extends React.Component {
                         <td>{id}</td>
                         <td>&nbsp;&nbsp;{desc}&nbsp;&nbsp;&nbsp;</td>                   
                         <td>
-                        <NumberFormat value={unitPrice} displayType={'text'} decimalScale='4' prefix={'$'} /> per {unit}
+                        <NumberFormat value={unitPrice} displayType={'text'} decimalScale='3' prefix={'$'} /> per {unit}
                         </td>
-                        <td>*</td>
-                        <td>{units} {calculatedType}</td>
-                        <td> = </td>
+                        
+<td></td>
+
                         <td>
+
                             <NumberFormat value={machinePrice} displayType={'text'} decimalScale='2' prefix={'$'} /> 
+                            
                         </td>
                     </tr> 
                 </tbody>
@@ -99,22 +117,22 @@ class MachinePriceSummary extends React.Component {
             <tbody>
                 <tr><td colspan='100'><hr/></td></tr>
                 <tr>
-                    <th colspan='6'>Total:</th>
-                    <td><NumberFormat value={totalPrice} displayType={'text'} decimalScale='2' housandSeparator={true} prefix={'$'} /> per hour</td>
+                    <th colspan='4'>Total:</th>
+                    <td><NumberFormat value={totalPrice} displayType={'text'} decimalScale='2' housandSeparator={true} prefix={'$'} /> per month</td>
                 </tr> 
             </tbody>
         )
-        
+        /*
         if (totalPrice == 0) 
-            return ( <Typography  color="secondary"> This instance type is not available in this region.</Typography>)
-        else
+            return ( <Typography  color=""> This instance type is not available in this region.</Typography>)
+        else*/
             return (
                 <Accordion expanded={this.state.isOpen} onChange={this.toggleOpen}>
                     <AccordionSummary
                     expandIcon={<ExpandMoreIcon />}
                     aria-controls="panel1a-content"
                     id="panel1a-header">
-                    <NumberFormat value={totalPrice} displayType={'text'} decimalScale='2' housandSeparator={true} prefix={'$'} />&nbsp;per hour
+                    <NumberFormat value={totalPrice} displayType={'text'} decimalScale='2' housandSeparator={true} prefix={'$'} />&nbsp;per month
                     </AccordionSummary>
                     <AccordionDetails>
                         <table>{machineDetails}</table>

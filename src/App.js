@@ -3,7 +3,6 @@ import PricingApi from './api/PricingApi.js'
 import ModalPopup from './components/ModalPopup.js'
 import AppHeader from './components/AppHeader.js'
 import MainLayout from './components/MainLayout.js'
-import MachineList from './lib/MachineList.js'
 import Divider from '@material-ui/core/Divider';
 import '@fontsource/roboto';
 import React from 'react';
@@ -15,10 +14,10 @@ class App extends React.Component {
     instancePriceList: null,
     machineList: [],
     machineListFiltered: [],
-    vcpu_filter: 0,
-    memory_filter: 0,
-    pdboot_filter: 0,
-    ssdpd_filter: 0,
+    vcpu_filter: {},
+    memory_filter: {},
+    pdboot_filter: {},
+    ssdpd_filter: {},
     regionFilter: '',
     
     error : {
@@ -78,21 +77,23 @@ class App extends React.Component {
       var currentFilter = this.state.filter
 
       // see what gemotery we are looking at in this callback, is it cpu memoy or what
-      var type = geometry.title.toLowerCase()
-
+      var type = geometry.title.toLowerCase().replace('-','')
+      
+      await this.setState({[type+'_filter']: geometry, })  //  es6 is the hottness.
+      
       // set the current filter value for this type(cpu memroy pd etc)
       switch (type) {
         case 'vcpu':
-          await this.setState({vcpu_filter: geometry.recommended})
+          await this.setState({vcpu_filter: geometry})
           break;        
         case 'memory':
-          await this.setState({memory_filter: geometry.recommended})
+          await this.setState({memory_filter: geometry})
           break;
-        case 'pd-boot':
-          await this.setState({pdboot_filter: geometry.recommended})
+        case 'pdboot':
+          await this.setState({pdboot_filter: geometry})
           break;
-        case 'ssd-pd':
-          await this.setState({ssdpd_filter: geometry.recommended})
+        case 'ssdpd':
+          await this.setState({ssdpd_filter: geometry})
           break;
       }
       
@@ -103,29 +104,38 @@ class App extends React.Component {
   async applyMachineListFilter() {
     var machineList = []
     var vcpu_f = this.state.vcpu_filter
-    var memory_f = this.state.memory_filter    
-    var oml = this.state.machineList
+    var memory_f = this.state.memory_filter
+    var m = new MachineConfig()
+    
+
+    machineList =  m.customMachines(vcpu_f.recommended,memory_f.recommended)
+
     for (var i in this.state.machineList) {
       let curMachine = this.state.machineList[i]
-      //let series =  // not actually series, but different types without hte 
       
       /// calculate custom types
       //TODO: need min/max cpu/mem values here
       if (curMachine.type.includes('custom')) {
-        curMachine.vcpu=vcpu_f
-        curMachine.memory=memory_f
+      //  continue; // never repush custom types, we initialized with it.
       }
 
       var push=false
       // floor
-      if (vcpu_f <= curMachine.vcpu && memory_f <= curMachine.memory ) {
+      if (
+          vcpu_f.min_recommended <= curMachine.vcpu && 
+          memory_f.min_recommended <= curMachine.memory ) {
         push = true
       }
       // celing
       // dont add cpus more than 2x what we want
-      if (2*vcpu_f < curMachine.vcpu || 2*memory_f < curMachine.memory) {
+      if (
+          vcpu_f.max_recommended <= curMachine.vcpu || 
+          memory_f.max_recommended <= curMachine.memory) {
         push=false
       }
+
+      // don't do that, use spread
+
       if (push ) {
          curMachine.skus = this.getSkus(curMachine.type)
          machineList.push(curMachine)
@@ -175,6 +185,10 @@ class App extends React.Component {
 
     var matchCustomRam = new RegExp(`^${series} Custom Instance Ram`,'i')
     var matchCustomCpu = new RegExp(`^${series} Custom Instance Core`,'i')
+
+    var matchSSD  = new RegExp(`^SSD backed PD Capacity`,'i')//SSD
+    var matchPD  = new RegExp(`^Storage PD Capacity`,'i') //PDStandard
+
     if (series == 'e2') {
       matchCustomRam = matchStandardRam
       matchCustomCpu = matchStandardCpu
@@ -196,30 +210,42 @@ class App extends React.Component {
     for(var i in this.state.instancePriceListFiltered) {
         var sku = this.state.instancePriceListFiltered[i]
         var desc = sku['description'].toLowerCase()
+        var resourceGroup = sku.category.resourceGroup
 
-
-       if (series)
-        var push =false
-        if (custom) {
-          if (desc.match(matchCustomCpu)) {
+        if (resourceGroup == 'PDStandard') {
+           if (desc.match(matchPD)) {
+            sku['calculatedType'] = 'PD'
             push=true
-            sku['calculatedType'] = 'CPU'
-          }
-          if (desc.match(matchCustomRam)) {
+           }
+        } else if (resourceGroup == 'SSD') {
+          if (desc.match(matchSSD)) {          
+            sku['calculatedType'] = 'SSD'
             push=true
-            sku['calculatedType'] = 'RAM'
           }
-
         } else {
-        if (desc.match(matchStandardCpu)) {
-            push=true
-            sku['calculatedType'] = 'CPU'
+          if (series)
+            var push =false
+            if (custom) {
+              if (desc.match(matchCustomCpu)) {
+                push=true
+                sku['calculatedType'] = 'CPU'
+              }
+              if (desc.match(matchCustomRam)) {
+                push=true
+                sku['calculatedType'] = 'RAM'
+              }
+
+            } else {
+            if (desc.match(matchStandardCpu)) {
+                push=true
+                sku['calculatedType'] = 'CPU'
+              }
+              if (desc.match(matchStandardRam)) {
+                push=true
+                sku['calculatedType'] = 'RAM'
+              }        
+            }
           }
-          if (desc.match(matchStandardRam)) {
-            push=true
-            sku['calculatedType'] = 'RAM'
-          }        
-        }
         
         if(push){
           skus.push(sku)
@@ -294,6 +320,9 @@ class App extends React.Component {
     machineList = {this.state.machineListFiltered}  
     onInputChanged = {this.handleInputChanged}
     applyRegionFilter = {this.applyRegionFilter}
+
+    pdssd={this.state.ssdpd_filter.recommended}
+    pdboot={this.state.pdboot_filter.recommended}
     />
         
       </div>

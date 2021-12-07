@@ -17,10 +17,13 @@ class GeometryModel
 {  
     title= ""
     type= ""
-    current="0"
+    current="1"
     utilization=100
     utilization_desired=100
     recommended=0
+    min_recommended=0
+    max_recommended=0
+    spread=0
     isOpen=false
     
     // id is not set incase we try to persist 
@@ -34,30 +37,44 @@ class GeometryModel
         this.id = title.replace( /[^a-z0-9]/g, '' ); // lowercase a-z only
         
         let current = localStorage.getItem(`${this.id}-current`)
-        this.current = current ? current : this.current
+        this.current = current>0 ? current : this.current
 
         let utilization = localStorage.getItem(`${this.id}-utilization`)
-        this.utilization = utilization ? utilization : this.utilization
+        this.utilization = utilization>0 ? utilization : this.utilization
 
         let utilization_desired = localStorage.getItem(`${this.id}-utilization_desired`)
-        this.utilization_desired = utilization_desired ? utilization_desired : this.utilization_desired
+        this.utilization_desired = utilization_desired>0 ? utilization_desired : this.utilization_desired
 
+        this.spread = localStorage.getItem(`${this.id}-spread`)
         this.isOpen = localStorage.getItem(`${this.id}-isOpen`)
+        
 
         if (this.isOpen == 'false') // local storage is always a string
           this.isOpen = false
       }
+      this.calculateRecommendation()
     }
 
     
     calculateRecommendation() {
         if (this.utilization_desired) // prevent divide by zero
         {
-          // now calculate recommended.
-          
-              return this.recommended =  Math.ceil(this.current*this.utilization/this.utilization_desired)
+            // now calculate recommendations.          
+            this.recommended =  Math.ceil(this.current*this.utilization/this.utilization_desired)  
+            if (this.spread> 0 ){
+              this.min_recommended = (this.recommended - (this.recommended * this.spread/100)).toFixed(0)
+              this.max_recommended = (this.recommended + (this.recommended * this.spread/100)).toFixed(0)  
+            } else {
+              this.max_recommended = this.min_recommended = this.recommended 
+            }
             
-        }        
+            /// utiliztaion based on recommeneded
+            if (this.current) {
+            this.min_utilization_actual = (this.min_recommended / this.current *100).toFixed(0)
+            this.max_utilization_actual = (this.max_recommended / this.current *100).toFixed(0)
+            this.utilization_actual= (this.recommended/ this.current *100).toFixed(0)
+          }
+        }
     }
 
     //store shape to localstorge
@@ -73,10 +90,13 @@ class GeometryModel
       }
 
       if (this.utilization_desired) {
-        localStorage.setItem(`${this.id}-utilization_desired`,this.utilization_desired)
+        localStorage.setItem(`${this.id}-utilization_desired`,this.utilization_desired)        
+      }
+      if (this.spread>-1) {
+        localStorage.setItem(`${this.id}-spread`,`${this.spread}`)
       }
 
-      localStorage.setItem(`${this.id}-isOpen`,this.isOpen)
+      localStorage.setItem(`${this.id}-isOpen`,`${this.isOpen}`)
     }
     
 }

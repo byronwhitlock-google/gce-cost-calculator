@@ -12,6 +12,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+TODO:
+1. make discount default to 0 and accept inputs
+2. toggle-able SUDs
+3. CUD + blended rates toggle-able, and prices shown
+4. add PD HDD, PD SSD, and local SSD options
+5. debug why c2 instance types show "not available"
+6. when clicking inputs on right, overwrite 0 instead of appending
+
 */
 import React, { useState } from 'react';
 import DOMPurify from "dompurify";
@@ -98,16 +106,17 @@ class CostModeling extends React.Component {
                     
                     
                     <CostModelingGeometry title="vCpu" type ="Cores"  onChange={this.props.onInputChanged} {...this.props}/>       
-                    <CostModelingGeometry title="Memory" type ="Gigabytes" onChange={this.props.onInputChanged} {...this.props}/>       
-                    <CostModelingGeometry title="PD-Boot" type ="Disk GB" onChange={this.props.onInputChanged} {...this.props}/>       
-                    <CostModelingGeometry title="SSD-PD" type ="Disk GB" onChange={this.props.onInputChanged} {...this.props}/>       
+                    <CostModelingGeometry title="Memory" type ="Gigabytes" onChange={this.props.onInputChanged} {...this.props} />       
+                    <CostModelingGeometry title="PD-Boot" type ="Disk GB" onChange={this.props.onInputChanged} {...this.props} hideSpread={true}/>       
+                    <CostModelingGeometry title="SSD-PD" type ="Disk GB" onChange={this.props.onInputChanged} {...this.props} hideSpread={true}/>       
                 
                 </Item>
                 <Item>
-                <h2>Include Contractual Discount</h2>
+                    <h2><FormControlLabel  disabled={true} control={<Checkbox defaultChecked color="primary"/>} label="" />Include Contractual Discount ?</h2>
+                
                     <GenericGeometry 
                         title="Discount" 
-                        value="5"
+                        value="0"
                         type="%"
                         {...this.props}
 
@@ -115,7 +124,7 @@ class CostModeling extends React.Component {
                 </Item>
                 
                 <Item>
-                <h2><FormControlLabel control={<Checkbox defaultChecked color="primary"/>} label="" />Show Commited Use Discounts ?</h2>
+                <h2><FormControlLabel  disabled={true} control={<Checkbox defaultChecked color="primary"/>} label="" />Show Commited Use Discounts ?</h2>
                                     <GenericGeometry 
                         title="Sustained Use Discount" 
                         value="6"

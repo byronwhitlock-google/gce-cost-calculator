@@ -14,32 +14,58 @@ class MachineConfig {
     return [series, instanceType, cores].join('-').toLowerCase();
     }
 
-    machineDetails (family, series, instanceType, coreNumber) {
+    machineDetails (family, series, instanceType, coreNumber, memory) {
         const instanceName =  this.generateGceInstanceName(family, series, instanceType, coreNumber);
-        const instanceInfo =  this.gceMachineFamilyConfig[family][series]['supportedTypes'][instanceType];
-        const ramRatio = instanceInfo['alternateRamRatio'] &&
-        instanceInfo['alternateRamRatioCores'] &&
-        instanceInfo['alternateRamRatioCores'].includes(coreNumber) ?
-        instanceInfo['alternateRamRatio'] :
-        instanceInfo['ramRatio'];
-        const coreRatio = instanceInfo['coreRatio'];
-        
-        let vcpu = coreNumber * coreRatio
-        let memory = coreNumber * ramRatio
-        let gpu = 0
+        let vcpu = coreNumber
 
-        if (series == 'a2') {        
-            gpu = coreNumber
+        if (instanceType != 'custom') {
+          const instanceInfo =  this.gceMachineFamilyConfig[family][series]['supportedTypes'][instanceType];
+          const ramRatio = instanceInfo['alternateRamRatio'] &&
+          instanceInfo['alternateRamRatioCores'] &&
+          instanceInfo['alternateRamRatioCores'].includes(coreNumber) ?
+          instanceInfo['alternateRamRatio'] :
+          instanceInfo['ramRatio'];
+          const coreRatio = instanceInfo['coreRatio'];
+        
+          vcpu = coreNumber * coreRatio /// this seems to be 1:1 for now
+          memory = coreNumber * ramRatio
+          let gpu = 0
+
+          if (series == 'a2') {        
+              gpu = coreNumber
+          }
         }
         return {
             type: instanceName,
             series:series,
             family:family,
-            vcpu:vcpu,
-            memory:memory};
+            vcpu:vcpu, // if this is zero, custom type.
+            memory:memory       
+          };
     }
   
-
+    customMachines(cores, memory) {
+       let machineList = []
+        Object.entries(this.gceMachineFamilyConfig).forEach(([
+                                                                family, familyInfo
+                                                            ]) => {
+            
+            Object.entries(familyInfo).forEach(([series, genInfo]) => {
+              if (genInfo['isCustomAvailable'] ) {
+                // add both ram:core and core:ram custom types if they are withing the min ratios
+                if (cores >= genInfo['minCustomCore'] && cores <= genInfo['maxCustomCore']) {
+                  // check this type within approriate ram ratio
+                  if (memory/cores >= genInfo['minCustomRamRatio'] && memory/cores <= genInfo['maxCustomRamRatio']) {                    
+                    machineList.push(
+                        this.machineDetails(family, series, 'custom', cores,memory)  
+                    )
+                  }
+                }
+              }           
+            });
+        });
+        return machineList
+    }
     // gets us the machinelist format.
     machines() {
         let machineList = []
@@ -48,6 +74,11 @@ class MachineConfig {
                                                             ]) => {
             
             Object.entries(familyInfo).forEach(([series, genInfo]) => {
+              if (genInfo['isCustomAvailable'] ) {
+                    machineList.push(
+                        this.machineDetails(family, series, 'custom', 0)  
+                    )
+              }
             Object.entries(genInfo['supportedTypes']).forEach(([
                                                                 typeName, typeData
                                                                 ]) => {

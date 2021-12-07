@@ -3,7 +3,6 @@ import React from 'react';
 //import Calculator from 'lib/Calculator.js' 
 
 import JSONPretty from 'react-json-pretty';
-import MachineList from '../lib/MachineList';
 import Grid from '@material-ui/core/Grid';
 import Paper from '@material-ui/core/Paper';
 import { styled } from '@material-ui/core/styles';
